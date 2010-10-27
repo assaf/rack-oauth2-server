@@ -1,6 +1,295 @@
 = Rack::OAuth2::Server
 
-OAuth 2.0 Authorization Server as a Rack module. Because you don't allow strangers into your app, and OAuth 2.0 leaves 1.0 in the dust. 
+OAuth 2.0 Authorization Server as a Rack module. Because you don't allow
+strangers into your app, and OAuth 2.0 is the new awesome.
+
+
+== Step 1: Setup Your Database
+
+The authorization server needs to keep track of clients, authorization requests,
+access grants and access tokens. For that, you'll need a database.
+
+The current release uses MongoDB. To tell the authorization server which
+database to use, assign Rack::OAuth2::Models.db a Mongo::DB instance, for
+example:
+
+  # Use dev_db for all your OAuth 2.0 storage needs
+  Rack::OAuth2::Models.db = Mongo::Connection.new["dev_db"]
+
+Because MongoDB is schema-less, there's no need to run migrations. Enjoy.
+
+If MongoDB is not your flavor, you can easily change the models to support a
+different database. All the persistence logic is in lib/rack/oauth2/models, and
+there's not much of it. If you added support for different database, be so kind
+and send us a patch.
+
+
+== Step 2: Authorize Some Clients
+
+Before it can request authorization, a client application must first register
+itself. Registration provides the client application with a client identifier
+and secret (similar to user name/password), which it uses to authenticate itself
+against the authorization server.
+
+Authorization allows you to track clients, selectively enable features, and if
+necessary, 86 them.
+
+When registering, the client provides its display name (:display_name), site URL
+(:link) and display image URL (:image_url). These help the user tell which
+client they're allowing access to their account.
+
+Registering a redirect URI (:redirect_uri) makes sure no authorizations are
+allowed that do not redirect back to that URI.  It is optional, but recommended.
+
+For example:
+
+  uber_client = Rack::OAuth2::Models::Client.create(:display_name=>"UberClient",
+    :link=>"http://uberclient.dot/", :redirect_uri=>"http://uberclient.dot/oauth/callback")
+  puts "Your client identifier: #{client.id}"
+  puts "Your client secret: #{client.secret}"
+
+
+== Step 3: Use The Rack
+
+Add this to your code:
+
+  use Rack::OAuth2::Server
+
+There are various options you can specify:
+
+- :access_token_path -- Set this if you don't care for the default
+  /oauth/access_token.
+- :authorize_path -- Set this if you don't care for the default
+  /oauth/authorize.
+- :restricted_path -- All URLs under this path will require authorization. There
+  are other ways to enforce authorization, read below for ideas.
+- :scopes -- Array listing all allowed scopes, nil if you're going to check
+  the request scope yourself.
+- :supported_authorization_types -- Supported authorization types are
+  authorization code (code) and access token (token). Set to code or token if
+  you want one of these but not both.
+- :realm -- The authorization realm. This shows up in 401 responses returned to
+  the client when it fails to authenticate or authenticates with an invalid
+  token.
+
+
+== Step 4: Let Users Authorize
+
+We handle all the nitty gritty details of OAuth 2.0, but actually authenticating
+end users and authorizing clients to access their resources is your
+responsibility.
+
+The flow works like this:
+
+                             Rack::OAuth2::Server
+                --------------------    --------------------
+                | /oauth/authorize |    | Set request.env  |
+                |                  |    |                  |
+  Client app -> |   authenticate   | -> | oauth.request    | ->
+                |      client      |    | oauth.client_id  |
+                |                  |    | oauth.scope      |
+                --------------------    --------------------
+
+                                    Your code 
+     --------------------     ----------------------    -------------------
+     | Authenticate user |    | Ask user to grant/ |    | Set request.env |
+  -> |                   | -> | deny client access | -> |                 | ->
+     |                   |    | to their account   |    | oauth.response  |
+     |                   |    |                    |    | oauth.resource  |
+     --------------------     ----------------------    -------------------
+
+                  Rack::OAuth2::Server
+     -----------------------    ----------------------
+     | Create access grant |    | Redirect back to   |
+     | or access token for |    | client application |
+  -> | oauth.resource      | -> |                    | -> Client app
+     |                     |    |                    |
+     |                     |    |                    |
+     -----------------------    ----------------------
+
+=== Magic Happens
+
+- End user needs to access a resource, and so the client application redirects
+  their browser to the authorization URL (by convention, /oauth/authorize)
+
+- Rack::OAuth2::Server intercepts the request, authenticates the client and
+  checks it can grant new tokens. If this step fails, it redirects the browser
+  back to the client application with an error code.
+
+- Rack::OAuth2::Server sets oauth.request to the request handle, oauth.client_id
+  to the client identifier, and oauth.scope to the scope names (array of
+  strings).
+
+- Rack::OAuth2::Server transfers control to the application. The application
+  would have a controller to handle the request to /oauth/authorize.
+
+=== Your Code
+
+- The application (that means, your code) authenticates the end user, presents
+  the end user with the authorization request (using information it has about
+  the client and request scope), and gives the end user the choice to grant/deny
+  the authorization request.
+
+- The above step may be a flow of several pages. The application needs, at the
+  minimum, to keep track of oauth.request so it can use it to construct a
+  response. You can store the value of oauth.request in the session, query
+  parameters of whatever sounds RESTful to you.
+
+- Once the end user made a decision, the application communicates it by setting
+  the oauth.request header to the request handle (from oauth.request above). If
+  the end-user granted the request, the application also sets the oauth.resource
+  header to the resource identifier.
+
+- This action should not attempt to render anything.
+
+=== More Magic Happens
+
+- Rack::OAuth2::Server takes control when it notices a value in oauth.response,
+  creates an access grant or access token (the client can request either one),
+  and redirects the browser to the redirect URI.
+
+Here's a skeleton example to illustrate this:
+
+  class Authentication < ApplicationController
+    use Rack::OAuth2::Server, :scopes=>%w{read delete}
+
+    before do
+      request.extend Rack::OAuth2::Server::RequestHelpers
+      response.extend Rack::OAuth2::Server::ResponseHelpers
+    end
+
+    get "/oauth/authorize" do
+      # Need to keep track of oauth.request.
+      session["oauth.request"] = request.oauth_request
+      # Show this to end-user.
+      @client = request.oauth_client
+      @scopes = request.oauth_scope
+      render "/oauth/authorize"
+    end
+
+    post "/oauth/grant" do
+      # End user granted request, let Rack::OAuth2::Server know.
+      response.oauth_grant! session["oauth.request"], current_user.id
+    end
+
+    post "/oauth/deny" do
+      # End user denied request, let Rack::OAuth2::Server know.
+      response.oauth_deny! session["oauth.request"]
+    end
+  end
+
+The resource identifier can be anything, as long as it fits in a string.
+Typically this would be the user ID or account ID. It will be passed back to the
+application whenever the client makes an authenticated request using that access
+token.
+
+
+== Step 5: Manage Your Resources
+
+Rack::OAuth2::Server intercepts all incoming requests and looks for either OAuth
+authentication header, or access_token query parameter. If it finds either one,
+and the token exists and is valid, it sets oauth.resource to the resource
+identifier (the one you supplied in step 4).
+
+If the token does not exist, or is invalid, the client gets a 401 response. If
+there's no token, nothing happens. It is up to you to reject unauthenticated
+requests.
+
+  class SimpleApp < Sinatra::Base
+    use Rack::OAuth2::Server
+
+    before do
+      request.extend Rack::OAuth2::Server::RequestHelpers
+      @account = Account.find(request.oauth_resource) if request.oauth_resource
+    end
+
+    get "/public" do
+      # Everyone can access, authenticated access sees more data
+      if @account
+        render Data.visible_to(@account)
+      else
+        render Data.public
+      end
+    end
+
+    get "/protected" do
+      # Only authenticated accounts can see this
+      return response.oauth_no_access!
+      render Data.visible_to(@account)
+    end
+
+    delete "/protected" do
+      # Must be authenticated with scope 'delete'
+      return response.oauth_no_access! "delete"
+      Date.visible_to(@account).destroy 
+    end
+  end
+
+
+== Username/Password Credentials
+
+
+== Understanding the Models
+
+=== Client
+
+The Client model represents the credentials of a client application. There are
+two pairs: the client identifier and secret, which the client uses to identify
+itself to the authorization server, and the display name and URL, which the
+client uses to identify itself to the end user.
+
+The client application is not tied to a single Client record. Specifically, if
+the client credentials are compromised, you'll want to revoke it and create a
+new Client with new pair of identifier/secret. You can leave the revoked
+instance around.
+
+Calling revoke! on the client revokes access using these credential pair, and
+also revokes any outstanding authorization requests, access grants and access
+tokens created using these credentials.
+
+You may also want to register a redirect URI. If registered, the client is only
+able to request authorization that redirect back to that redirect URI.
+
+=== Authorization Request
+
+The authorization process may involve multiple
+requests, and the application must maintain the authorization request details
+from beginning to end.
+
+To keep the application simple, all the necessary information for a single
+authorization request is stored in the AuthRequest model. The application only
+needs to keep track of the authorization request identifier.
+
+Granting an authorization request (by calling grant!) creates an access grant or
+access token, depending on the requested response type, and associates it with
+the resource.
+
+=== Access Grant
+
+An access grant is a nonce use to generate access token. This
+model keeps track of the nonce (the "authorization code") and all the data it
+needs to create an access token.
+
+=== Access Token
+
+ An access token allows the client to access a resource with the
+given scope. It keeps track of the account identifier (supplied by the
+application), client identifier and scope (both supplied by the client).
+
+An AccessToken is created by copying values from an AuthRequest or AccessGrant,
+and remains in effect until revoked. (OAuth 2.0 access tokens can also expire,
+but we don't support expiration at the moment)
+
+=== General
+
+You will notice that some information is duplicated, e.g. client
+identifier and scope are copied from AuthRequest to AccessGrant to AccessToken.
+If you feel a squeeze on your Web scale database, you can claim more space by
+deleting spent AuthRequest and AccessGrant records.
+
+If you do keep them around, you can look at the history of an authorization
+through the created_at and revoked fields, the two major events in the life of
+each model.
 
 
 == Credits

@@ -52,20 +52,20 @@ module Rack
         # Timestamp if revoked.
         attr_accessor :revoked
 
-        # Grant access to the specified account.
-        def grant!(account_id)
-          raise ArgumentError, "Must supply an account identifier" unless account_id
+        # Grant access to the specified resource.
+        def grant!(resource)
+          raise ArgumentError, "Must supply a resource" unless resource
           return if revoked
           self.authorized_at = Time.now.utc
           if response_type == "code" # Requested authorization code
             unless self.grant_code
-              access_grant = AccessGrant.create(account_id, scope, client_id)
+              access_grant = AccessGrant.create(resource, scope, client_id, redirect_uri)
               self.grant_code = access_grant.code
               self.class.collection.update({ :_id=>id, :revoked=>nil }, { :$set=>{ :grant_code=>access_grant.code, :authorized_at=>authorized_at } })
             end
           else # Requested access token
             unless self.access_token
-              access_token = AccessToken.create(account_id, scope, client_id)
+              access_token = AccessToken.get_token_for(resource, scope, client_id)
               self.access_token = access_token.token
               self.class.collection.update({ :_id=>id, :revoked=>nil, :access_token=>nil }, { :$set=>{ :access_token=>access_token.token, :authorized_at=>authorized_at } })
             end

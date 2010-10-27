@@ -1,2 +1,4 @@
 .bundle
 .gems
+doc
+.yardoc

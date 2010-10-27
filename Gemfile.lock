@@ -9,8 +9,10 @@ PATH
 GEM
   remote: http://rubygems.org/
   specs:
+    awesome_print (0.2.1)
     bson (1.1.1)
     bson_ext (1.1.1)
+    json (1.4.6)
     mongo (1.1.1)
       bson (>= 1.1.1)
     rack (1.2.1)
@@ -28,7 +30,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  awesome_print
   bson_ext
+  json
   mongo (~> 1)
   rack (~> 1.2)
   rack-oauth2-server!

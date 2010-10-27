@@ -12,13 +12,20 @@ module Rack
             Models.new_instance self, collection.find_one(id)
           end
 
-          # Create a new client. Client is in control of their display name, site
-          # and redirect URL.
-          def create(display_name, link, redirect_uri)
-            link = Server::Utils.parse_redirect_uri(link).to_s
-            redirect_uri = Server::Utils.parse_redirect_uri(redirect_uri).to_s if redirect_uri
-            fields = { :secret=>Models.secure_random, :display_name=>display_name, :link=>link,
-                       :redirect_uri=>redirect_uri, :created_at=>Time.now.utc, :revoked=>nil }
+          # Create a new client. Client provides the following properties:
+          # # :display_name -- Name to show (e.g. UberClient)
+          # # :link -- Link to client Web site (e.g. http://uberclient.dot)
+          # # :image_url -- URL of image to show alongside display name
+          # # :redirect_uri -- Registered redirect URI.
+          # 
+          # This method does not validate any of these fields, in fact, you're
+          # not required to set them, use them, or use them as suggested. Using
+          # them as suggested would result in better user experience.  Don't ask
+          # how we learned that.
+          def create(args)
+            redirect_uri = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
+            fields =  { :secret=>Models.secure_random, :display_name=>args[:display_name], :link=>args[:link],
+                        :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :created_at=>Time.now.utc, :revoked=>nil }
             fields[:_id] = collection.insert(fields)
             Models.new_instance self, fields
           end
@@ -37,6 +44,8 @@ module Rack
         attr_reader :display_name
         # Link to client's Web site.
         attr_reader :link
+        # Preferred image URL for this icon.
+        attr_reader :image_url
         # Redirect URL. Supplied by the client if they want to restrict redirect
         # URLs (better security).
         attr_reader :redirect_uri
@@ -50,7 +59,7 @@ module Rack
         def revoke!
           self.revoked = Time.now.utc
           Client.collection.update({ :_id=>id }, { :$set=>{ :revoked=>revoked } })
-          AuthRequest.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked })
+          AuthRequest.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
           AccessGrant.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
           AccessToken.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
         end

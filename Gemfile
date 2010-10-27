@@ -6,6 +6,8 @@ group :development do
 end
 
 group :test do
+  gem "awesome_print"
+  gem "json"
   gem "rack-test"
   gem "shoulda"
   gem "sinatra"
