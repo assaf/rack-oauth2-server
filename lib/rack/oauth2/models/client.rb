@@ -18,7 +18,7 @@ module Rack
             link = Server::Utils.parse_redirect_uri(link).to_s
             redirect_uri = Server::Utils.parse_redirect_uri(redirect_uri).to_s if redirect_uri
             fields = { :secret=>Models.secure_random, :display_name=>display_name, :link=>link,
-                       :redirect_uri=>redirect_uri, :created_at=>Time.now.utc }
+                       :redirect_uri=>redirect_uri, :created_at=>Time.now.utc, :revoked=>nil }
             fields[:_id] = collection.insert(fields)
             Models.new_instance self, fields
           end
@@ -49,10 +49,10 @@ module Rack
         # this client. Ward off the evil.
         def revoke!
           self.revoked = Time.now.utc
-          Client.collection.update({ :_id=>id, :revoked=>nil }, { :revoked=>revoked })
-          AuthRequest.collection.update({ :client_id=>id, :revoked=>nil }, { :revoked=>revoked })
-          AccessGrant.collection.update({ :client_id=>id, :revoked=>nil }, { :revoked=>revoked })
-          AccessToken.collection.update({ :client_id=>id, :revoked=>nil }, { :revoked=>revoked })
+          Client.collection.update({ :_id=>id }, { :$set=>{ :revoked=>revoked } })
+          AuthRequest.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked })
+          AccessGrant.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
+          AccessToken.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
         end
 
         #collection.create_index [[:display_name, Mongo::ASCENDING]]

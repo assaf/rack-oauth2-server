@@ -14,10 +14,16 @@ module Rack
             Models.new_instance self, collection.find_one({ :_id=>token })
           end
 
+          # If access token already exists, reuse it.
+          def find_or_create(account_id, scope, client_id)
+            token = collection.find_one({ :account_id=>account_id, :scope=>scope, :client_id=>client_id, :revoked=>nil })
+            token ? Models.new_instance(self, token) : create(account_id, scope, client_id)
+          end
+
           # Create a new access token.
           def create(account_id, scope, client_id)
             fields = { :_id=>Models.secure_random, :account_id=>account_id, :scope=>scope, :client_id=>client_id,
-                       :created_at=>Time.now.utc, :expires_at=>nil, :revoked=>false }
+                       :created_at=>Time.now.utc, :expires_at=>nil, :revoked=>nil }
             collection.insert fields
             Models.new_instance self, fields
           end
@@ -46,7 +52,7 @@ module Rack
         # Revokes this access token.
         def revoke!
           self.revoked = Time.not.utc
-          AccessToken.collection.update({ :_id=>token, :revoked=>false }, { :revoked=>revoked })
+          AccessToken.collection.update({ :_id=>token }, { :$set=>{ :revoked=>revoked } })
         end
         
         # Allows us to kill all pending grants on behalf of client/account.

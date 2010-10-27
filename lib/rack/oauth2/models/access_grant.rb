@@ -15,7 +15,7 @@ module Rack
           # Create a new access grant.
           def create(account_id, scope, client_id)
             fields = { :_id=>Models.secure_random, :account_id=>account_id, :scope=>scope, :client_id=>client_id,
-                       :created_at=>Time.now.utc, :granted_at=>nil, :access_token=>nil }
+                       :created_at=>Time.now.utc, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
             collection.insert fields
             Models.new_instance self, fields
           end
@@ -51,7 +51,7 @@ module Rack
         # InvalidGrantError.
         def authorize!
           raise InvalidGrantError if self.access_token || self.revoked
-          access_token = AccessToken.create(account_id, scope, client_id)
+          access_token = AccessToken.find_or_create(account_id, scope, client_id)
           self.access_token = access_token.token
           self.granted_at = Time.now.utc
           self.class.collection.update({ :_id=>code, :access_token=>nil, :revoked=>nil }, { :$set=>{ :granted_at=>granted_at, :access_token=>access_token.token } }, :safe=>true)
