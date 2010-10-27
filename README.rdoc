@@ -1,0 +1,8 @@
+= Rack::OAuth2::Server
+
+OAuth 2.0 Authorization Server as a Rack module. Because you don't allow strangers into your app, and OAuth 2.0 leaves 1.0 in the dust. 
+
+
+== Credits
+
+Copyright (c) 2010 {Flowtow, Inc}[http://flowtown.com].
