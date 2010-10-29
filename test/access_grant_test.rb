@@ -32,7 +32,7 @@ class AccessGrantTest < Test::Unit::TestCase
       end
     end
 
-    def should_respond_with_access_token
+    def should_respond_with_access_token(scope = "read write")
       should "respond with status 200" do
         assert_equal 200, last_response.status
       end
@@ -49,7 +49,7 @@ class AccessGrantTest < Test::Unit::TestCase
         assert_match /[a-f0-9]{32}/i, JSON.parse(last_response.body)["access_token"]
       end
       should "response with scope" do
-        assert_match "read write", JSON.parse(last_response.body)["scope"]
+        assert_equal scope, JSON.parse(last_response.body)["scope"]
       end
     end
 
@@ -191,6 +191,11 @@ class AccessGrantTest < Test::Unit::TestCase
     should_return_error :invalid_grant
   end
 
+  context "no scope specified" do
+    setup { request_with_username_password "cowbell", "more", nil }
+    should_respond_with_access_token nil
+  end
+
   context "unsupported scope" do
     setup { request_with_username_password "cowbell", "more", "read write math" }
     should_return_error :invalid_scope
@@ -200,12 +205,12 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "using authorization code" do
     setup { request_access_token }
-    should_respond_with_access_token
+    should_respond_with_access_token "read write"
   end
 
   context "using username/password" do
-    setup { request_with_username_password "cowbell", "more" }
-    should_respond_with_access_token
+    setup { request_with_username_password "cowbell", "more", "read" }
+    should_respond_with_access_token "read"
   end
   
 end

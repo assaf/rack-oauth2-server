@@ -2,3 +2,4 @@
 .gems
 doc
 .yardoc
+*.gem

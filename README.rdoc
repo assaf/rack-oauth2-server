@@ -51,7 +51,11 @@ For example:
 
 == Step 3: Use The Rack
 
-Add this to your code:
+Rails 2.x and later, place this in config/environment.rb:
+
+  config.middleware.use Rack::OAuth2::Server
+
+For Sinatra/Padrino, add this in your application:
 
   use Rack::OAuth2::Server
 
@@ -63,8 +67,8 @@ There are various options you can specify:
   /oauth/authorize.
 - :restricted_path -- All URLs under this path will require authorization. There
   are other ways to enforce authorization, read below for ideas.
-- :scopes -- Array listing all allowed scopes, nil if you're going to check
-  the request scope yourself.
+- :scopes -- Array listing all allowed scopes, space separated list of scopes,
+  or nil if you don't care for scopes.
 - :supported_authorization_types -- Supported authorization types are
   authorization code (code) and access token (token). Set to code or token if
   you want one of these but not both.
@@ -290,8 +294,3 @@ deleting spent AuthRequest and AccessGrant records.
 If you do keep them around, you can look at the history of an authorization
 through the created_at and revoked fields, the two major events in the life of
 each model.
-
-
-== Credits
-
-Copyright (c) 2010 {Flowtow, Inc}[http://flowtown.com].

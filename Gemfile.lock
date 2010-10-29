@@ -4,7 +4,7 @@ PATH
     rack-oauth2-server (1.0.beta)
       bson_ext
       mongo (~> 1)
-      rack (~> 1.2)
+      rack (~> 1)
 
 GEM
   remote: http://rubygems.org/
@@ -34,7 +34,7 @@ DEPENDENCIES
   bson_ext
   json
   mongo (~> 1)
-  rack (~> 1.2)
+  rack (~> 1)
   rack-oauth2-server!
   rack-test
   shoulda

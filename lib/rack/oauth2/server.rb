@@ -42,9 +42,11 @@ module Rack
       attr_accessor :realm
       # Array listing all supported scopes, e.g. %w{read write}.
       attr_accessor :scopes
+      # Logger to use, otherwise looks for rack.logger.
+      attr_accessor :logger
 
       def call(env)
-        logger = env["rack.logger"]
+        logger = @logger || env["rack.logger"]
         request = OAuthRequest.new(env)
 
         # 3.  Obtaining End-User Authorization
@@ -71,17 +73,17 @@ module Rack
             request.env["oauth.resource"] = token.resource
             request.env["oauth.scope"] = token.scope.to_s.split
             request.env["oauth.client_id"] = token.client_id.to_s
-            logger.info "Authorized #{token.resource}"
+            logger.info "Authorized #{token.resource}" if logger
           rescue Error=>error
             # 5.2.  The WWW-Authenticate Response Header Field
-            logger.info "HTTP authorization failed #{error.code}"
+            logger.info "HTTP authorization failed #{error.code}" if logger
             return unauthorized(request, error)
           rescue =>ex
-            logger.info "HTTP authorization failed #{ex.message}"
+            logger.info "HTTP authorization failed #{ex.message}" if logger
             return unauthorized(request)
           end
         elsif restricted_path && request.path.index(restricted_path) == 0
-          logger.info "HTTP authorization header missing OAuth access token"
+          logger.info "HTTP authorization header missing OAuth access token" if logger
           return unauthorized(request, InvalidTokenError.new)
         end
 
@@ -115,7 +117,7 @@ module Rack
         begin
           redirect_uri = Utils.parse_redirect_uri(request.GET["redirect_uri"])
         rescue InvalidRequestError=>error
-          logger.error "Authorization request with invalid redirect_uri: #{request.GET["redirect_uri"]} #{error.message}"
+          logger.error "Authorization request with invalid redirect_uri: #{request.GET["redirect_uri"]} #{error.message}" if logger
           return bad_request(error.message)
         end
         state = request.GET["state"]
@@ -127,17 +129,20 @@ module Rack
           requested_scope = request.GET["scope"].to_s.split.uniq.join(" ")
           response_type = request.GET["response_type"].to_s
           raise UnsupportedResponseTypeError unless supported_authorization_types.include?(response_type)
-          raise InvalidScopeError unless scopes.nil? || requested_scope.split.all? { |v| scopes.include?(v) }
+          if scopes
+            allowed_scopes = scopes.respond_to?(:split) ? scopes.split : scopes
+            raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scopes.include?(v) }
+          end
           # Create object to track authorization request and let application
           # handle the rest.
           auth_request = Models::AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
           request.env["oauth.request"] = auth_request.id.to_s
           request.env["oauth.client_id"] = client.id.to_s
           request.env["oauth.scope"] = requested_scope.split
-          logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{response_type} with scope #{requested_scope}"
+          logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{response_type} with scope #{requested_scope}" if logger
           return @app.call(request.env)
         rescue Error=>error
-          logger.error "Authorization request error: #{error.code} #{error.message}"
+          logger.error "Authorization request error: #{error.code} #{error.message}" if logger
           params = Rack::Utils.parse_query(redirect_uri.query).merge(:error=>error.code, :error_description=>error.message, :state=>state)
           redirect_uri.query = Rack::Utils.build_query(params)
           return redirect_to(redirect_uri)
@@ -157,18 +162,18 @@ module Rack
         end
         # 3.1.  Authorization Response
         if auth_request.response_type == "code" && auth_request.grant_code
-          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access code #{auth_request.grant_code}"
+          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access code #{auth_request.grant_code}" if logger
           params = { :code=>auth_request.grant_code, :scope=>auth_request.scope, :state=>auth_request.state }
           params = Rack::Utils.parse_query(redirect_uri.query).merge(params)
           redirect_uri.query = Rack::Utils.build_query(params)
           return redirect_to(redirect_uri)
         elsif auth_request.response_type == "token" && auth_request.access_token
-          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access token #{auth_request.access_token}"
+          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access token #{auth_request.access_token}" if logger
           params = { :access_token=>auth_request.access_token, :scope=>auth_request.scope, :state=>auth_request.state }
           redirect_uri.fragment = Rack::Utils.build_query(params)
           return redirect_to(redirect_uri)
         else
-          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization"
+          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization" if logger
           params = Rack::Utils.parse_query(redirect_uri.query).merge(:error=>:access_denied, :state=>auth_request.state)
           redirect_uri.query = Rack::Utils.build_query(params)
           return redirect_to(redirect_uri)
@@ -191,20 +196,25 @@ module Rack
           when "password"
             raise UnsupportedGrantType unless @authenticator
             # 4.1.2.  Resource Owner Password Credentials
-            username, password, requested_scope = request.POST.values_at("username", "password", "scope")
+            username, password = request.POST.values_at("username", "password")
+            requested_scope = request.POST["scope"].to_s.split.uniq.join(" ")
             raise InvalidGrantError unless username && password
             resource = @authenticator.call(username, password)
             raise InvalidGrantError unless resource
-            raise InvalidScopeError unless scopes.nil? || requested_scope.split.all? { |v| scopes.include?(v) }
+            if scopes
+              allowed_scopes = scopes.respond_to?(:split) ? scopes.split : scopes
+              raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scopes.include?(v) }
+            end
             access_token = Models::AccessToken.get_token_for(resource, requested_scope.to_s, client.id)
           else raise UnsupportedGrantType
           end
-          logger.info "Access token #{access_token.token} granted to client #{client.display_name}, resource #{access_token.resource}"
-          return [200, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, 
-                  { :access_token=>access_token.token, :scope=>access_token.scope }.to_json]
+          logger.info "Access token #{access_token.token} granted to client #{client.display_name}, resource #{access_token.resource}" if logger
+          response = { :access_token=>access_token.token }
+          response[:scope] = access_token.scope unless access_token.scope.empty?
+          return [200, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, response.to_json]
           # 4.3.  Error Response
         rescue Error=>error
-          logger.error "Access token request error: #{error.code} #{error.message}"
+          logger.error "Access token request error: #{error.code} #{error.message}" if logger
           return unauthorized(request, error) if InvalidClientError === error && request.basic?
           return [400, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, 
                   { :error=>error.code, :error_description=>error.message }.to_json]
@@ -217,7 +227,7 @@ module Rack
         # 2.1  Client Password Credentials
         if request.basic?
           client_id, client_secret = request.credentials
-        elsif request.post?
+        elsif request.form_data?
           client_id, client_secret = request.POST.values_at("client_id", "client_secret")
         else
           client_id, client_secret = request.GET.values_at("client_id", "client_secret")
