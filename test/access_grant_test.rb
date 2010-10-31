@@ -146,7 +146,7 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "authorization code for different client" do
     setup do
-      grant = Rack::OAuth2::Models::AccessGrant.create("foo bar", "read write", "4cc7bc483321e814b8000000", nil)
+      grant = Rack::OAuth2::Server::AccessGrant.create("foo bar", "read write", "4cc7bc483321e814b8000000", nil)
       request_access_token :code=>grant.code
     end
     should_return_error :invalid_grant
@@ -154,7 +154,7 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "authorization code revoked" do
     setup do
-      Rack::OAuth2::Models::AccessGrant.from_code(@code).revoke!
+      Rack::OAuth2::Server::AccessGrant.from_code(@code).revoke!
       request_access_token
     end
     should_return_error :invalid_grant
@@ -167,7 +167,7 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "no redirect URI to match" do
     setup do
-      grant = Rack::OAuth2::Models::AccessGrant.create("foo bar", "read write", client.id, nil)
+      grant = Rack::OAuth2::Server::AccessGrant.create("foo bar", "read write", client.id, nil)
       request_access_token :code=>grant.code, :redirect_uri=>"http://uberclient.dot/oz"
     end
     should_respond_with_access_token

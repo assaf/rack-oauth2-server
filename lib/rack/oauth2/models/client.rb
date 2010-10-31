@@ -1,6 +1,6 @@
 module Rack
   module OAuth2
-    module Models
+    class Server
 
       class Client
 
@@ -9,7 +9,7 @@ module Rack
           # Find Client from client identifier.
           def find(client_id)
             id = BSON::ObjectId(client_id.to_s)
-            Models.new_instance self, collection.find_one(id)
+            Server.new_instance self, collection.find_one(id)
           end
 
           # Create a new client. Client provides the following properties:
@@ -24,14 +24,14 @@ module Rack
           # how we learned that.
           def create(args)
             redirect_uri = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
-            fields =  { :secret=>Models.secure_random, :display_name=>args[:display_name], :link=>args[:link],
+            fields =  { :secret=>Server.secure_random, :display_name=>args[:display_name], :link=>args[:link],
                         :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :created_at=>Time.now.utc, :revoked=>nil }
             fields[:_id] = collection.insert(fields)
-            Models.new_instance self, fields
+            Server.new_instance self, fields
           end
 
           def collection
-            Models.db["oauth2.clients"]
+            Server.db["oauth2.clients"]
           end
         end
 

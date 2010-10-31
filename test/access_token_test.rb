@@ -72,7 +72,7 @@ class AccessTokenTest < Test::Unit::TestCase
         with_token
         get "/public"
       end
-      should_return_resource "HAI"
+      should_return_resource "HAI from Superman"
     end
   end
 
@@ -101,7 +101,7 @@ class AccessTokenTest < Test::Unit::TestCase
 
       context "revoked HTTP token" do
         setup do
-          Rack::OAuth2::Models::AccessToken.from_token(@token).revoke!
+          Rack::OAuth2::Server::AccessToken.from_token(@token).revoke!
           with_token
           get "/private"
         end
@@ -196,19 +196,18 @@ class AccessTokenTest < Test::Unit::TestCase
     end
   end
 
-
-  context "restricted resource" do
-    context "no authorization" do
-      setup { get "/restricted" }
-      should_fail_authentication :invalid_token
+  context "list tokens" do
+    setup do
+      @other = Rack::OAuth2::Server::AccessToken.get_token_for("foobar", "read", client.id).token
+      get "/list_tokens"
     end
 
-    context "HTTP authentication" do
-      setup do
-        with_token
-        get "/restricted"
-      end
-      should_return_resource "VIPs only"
+    should "return access token" do
+      assert_contains last_response.body.split, @token
+    end
+
+    should "not return other resource's token" do
+      assert !last_response.body.split.include?(@other)
     end
   end
 end

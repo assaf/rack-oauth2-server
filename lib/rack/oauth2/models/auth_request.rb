@@ -1,6 +1,6 @@
 module Rack
   module OAuth2
-    module Models
+    class Server
 
       # Authorization request. Represents request on behalf of client to access
       # particular scope. Use this to keep state from incoming authorization
@@ -10,7 +10,7 @@ module Rack
           # Find AuthRequest from identifier.
           def find(request_id)
             id = BSON::ObjectId(request_id.to_s)
-            Models.new_instance self, collection.find_one(id)
+            Server.new_instance self, collection.find_one(id)
           end
 
           # Create a new authorization request. This holds state, so in addition
@@ -20,11 +20,11 @@ module Rack
             fields = { :client_id=>client_id, :scope=>scope, :redirect_uri=>redirect_uri, :state=>state,
                        :response_type=>response_type, :created_at=>Time.now.utc, :grant_code=>nil, :authorized_at=>nil, :revoked=>nil }
             fields[:_id] = collection.insert(fields)
-            Models.new_instance self, fields
+            Server.new_instance self, fields
           end
 
           def collection
-            Models.db["oauth2.auth_requests"]
+            Server.db["oauth2.auth_requests"]
           end
         end
 

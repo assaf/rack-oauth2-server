@@ -8,24 +8,25 @@ require "shoulda"
 require "ap"
 require "json"
 require "sinatra/base"
+require "rack/oauth2/sinatra"
 
 class Test::Unit::TestCase
   include Rack::Test::Methods
 
   def setup
-    Rack::OAuth2::Models.db = Mongo::Connection.new["rack_test"]
+    Rack::OAuth2::Server.db = Mongo::Connection.new["rack_test"]
     SimpleApp.end_user_sees = nil
     @app = SimpleApp.new
-    @client = Rack::OAuth2::Models::Client.create(:display_name=>"UberClient", :redirect_uri=>"http://uberclient.dot/callback")
+    @client = Rack::OAuth2::Server::Client.create(:display_name=>"UberClient", :redirect_uri=>"http://uberclient.dot/callback")
   end
 
   attr_reader :client, :app
 
   def teardown
-    Rack::OAuth2::Models::Client.collection.drop
-    Rack::OAuth2::Models::AuthRequest.collection.drop
-    Rack::OAuth2::Models::AccessGrant.collection.drop
-    Rack::OAuth2::Models::AccessToken.collection.drop
+    Rack::OAuth2::Server::Client.collection.drop
+    Rack::OAuth2::Server::AuthRequest.collection.drop
+    Rack::OAuth2::Server::AccessGrant.collection.drop
+    Rack::OAuth2::Server::AccessToken.collection.drop
   end
 end
 

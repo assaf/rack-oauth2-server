@@ -7,7 +7,7 @@ require "rack/oauth2/models/access_token"
 
 module Rack
   module OAuth2
-    module Models
+    class Server
 
       class << self
         # A Mongo::DB object.

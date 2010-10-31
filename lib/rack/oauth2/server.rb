@@ -1,9 +1,8 @@
 require "rack/oauth2/models"
 require "rack/oauth2/server/errors"
 require "rack/oauth2/server/utils"
+require "rack/oauth2/server/helper"
 require "rack/oauth2/server/version"
-require "rack/oauth2/server/request_helpers"
-require "rack/oauth2/server/response_helpers"
 
 
 module Rack
@@ -12,68 +11,78 @@ module Rack
     # Implements an OAuth 2 Authorization Server, based on http://tools.ietf.org/html/draft-ietf-oauth-v2-10
     class Server
 
-      def initialize(app, options = {}, &authenticator)
-        @app, @authenticator = app, authenticator
-        { :access_token_path=>"/oauth/access_token",
-          :authorize_path=>"/oauth/authorize",
-          :supported_authorization_types=>%w{code token} }.merge(options).each do |key, value|
-          instance_variable_set :"@#{key}", value
+      class << self
+        # Return AuthRequest from authorization request handle.
+        def get_auth_request(authorization)
+          AuthRequest.find(authorization)
+        end
+
+        # Returns Client from client identifier.
+        def get_client(client_id)
+          Client.find(client_id)
+        end
+
+        # Returns AccessToken from token.
+        def get_access_token(token)
+          AccessToken.from_token(token)
+        end
+
+        # Returns all AccessTokens for a resource.
+        def list_access_tokens(resource)
+          AccessToken.from_resource(resource)
         end
       end
 
-      # Path for requesting access token, defaults to /oauth/access_token.
-      attr_accessor :access_token_path
-      # Path for requesting end-user authorization, defaults to
-      # /oauth/authorize.
-      attr_accessor :authorize_path
-      # Supported authorization types:
-      # * code -- Client can request authorization code
-      # * token -- Client can request access token
-      # You can change this if you don't want to support authorization code, or
-      # want to require obtaining authorization code first (i.e. don't allow token).
-      #
-      # Defaults to [code, token].
-      attr_accessor :supported_authorization_types
-      # All request within this path require authentication. For example, to
-      # require authentication on /api/v1/project, /api/v2/task and all other
-      # resources there, set restricted_path to /api/v1/.
-      attr_accessor :restricted_path
-      # Authorization realm. 
-      attr_accessor :realm
-      # Array listing all supported scopes, e.g. %w{read write}.
-      attr_accessor :scopes
-      # Logger to use, otherwise looks for rack.logger.
-      attr_accessor :logger
+      def initialize(app, options = {}, &authenticator)
+        @app = app
+        @options = { :authenticator=>authenticator,
+                     :access_token_path=>"/oauth/access_token",
+                     :authorize_path=>"/oauth/authorize",
+                     :authorization_types=>%w{code token} }.merge(options)
+      end
+
+      # Options are:
+      # - :access_token_path -- Path for requesting access token, defaults to
+      #   /oauth/access_token.
+      # - :authorize_path --  Path for requesting end-user authorization,
+      #   defaults to /oauth/authorize.
+      # - :authenticator -- For username/password authorization. A block that
+      #   receives username/password and returns resource name or nil.
+      # - :authorization_types -- Available authorization types are code and
+      #   token, defaults to both.
+      # - :realm -- Authorization realm. 
+      # - :scopes -- Array listing all supported scopes, e.g. %w{read write}.
+      # - :logger -- Logger to use, otherwise looks for rack.logger.
+      attr_reader :options
 
       def call(env)
-        logger = @logger || env["rack.logger"]
+        logger = options[:logger] || env["rack.logger"]
         request = OAuthRequest.new(env)
 
         # 3.  Obtaining End-User Authorization
         # Flow starts here.
-        return request_authorization(request, logger) if request.path == authorize_path
+        return request_authorization(request, logger) if request.path == options[:authorize_path]
         # 4.  Obtaining an Access Token
-        return respond_with_access_token(request, logger) if request.path == access_token_path
+        return respond_with_access_token(request, logger) if request.path == options[:access_token_path]
 
         # 5.  Accessing a Protected Resource
         if request.authorization
           # 5.1.1.  The Authorization Request Header Field
-          access_token = request.credentials if request.oauth?
+          token = request.credentials if request.oauth?
         else
           # 5.1.2.  URI Query Parameter
           # 5.1.3.  Form-Encoded Body Parameter
-          access_token = request.GET["oauth_token"] || request.POST["oauth_token"]
+          token = request.GET["oauth_token"] || request.POST["oauth_token"]
         end
 
-        if access_token
+        if token
           begin
-            token = Models::AccessToken.from_token(access_token)
-            raise InvalidTokenError if token.nil? || token.revoked
-            raise ExpiredTokenError if token.expires_at && token.expires_at <= Time.now.utc
-            request.env["oauth.resource"] = token.resource
-            request.env["oauth.scope"] = token.scope.to_s.split
-            request.env["oauth.client_id"] = token.client_id.to_s
-            logger.info "Authorized #{token.resource}" if logger
+            access_token = AccessToken.from_token(token)
+            raise InvalidTokenError if access_token.nil? || access_token.revoked
+            raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.utc
+            request.env["oauth.access_token"] = token
+            request.env["oauth.resource"] = access_token.resource
+            logger.info "Authorized #{access_token.resource}" if logger
           rescue Error=>error
             # 5.2.  The WWW-Authenticate Response Header Field
             logger.info "HTTP authorization failed #{error.code}" if logger
@@ -82,27 +91,30 @@ module Rack
             logger.info "HTTP authorization failed #{ex.message}" if logger
             return unauthorized(request)
           end
-        elsif restricted_path && request.path.index(restricted_path) == 0
-          logger.info "HTTP authorization header missing OAuth access token" if logger
-          return unauthorized(request, InvalidTokenError.new)
-        end
 
-        response = @app.call(env)
-        if response[1] && scope = response[1]["oauth.no_access"]
-          # 5.2.  The WWW-Authenticate Response Header Field
-          if scope.empty?
-            return unauthorized(request)
-          else
+          # We expect application to use 403 if request has insufficient scope,
+          # and return appropriate WWW-Authenticate header.
+          response = @app.call(env)
+          if response[0] == 403
+            scope = response[1]["oauth.no_scope"] || ""
             scope = scope.join(" ") if scope.respond_to?(:join)
-            challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(realm || request.host), scope]
+            challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options[:realm] || request.host), scope]
             return [403, { "WWW-Authenticate"=>challenge }, []]
+          else
+            return response
           end
-        elsif response[1] && response[1]["oauth.request"]
-          # 3.  Obtaining End-User Authorization
-          # Flow ends here.
-          return authorization_response(response[1], logger)
         else
-          return response
+          response = @app.call(env)
+          if response[1] && response[1]["oauth.no_access"]
+            # OAuth access required.
+            return unauthorized(request)
+          elsif response[1] && response[1]["oauth.authorization"]
+            # 3.  Obtaining End-User Authorization
+            # Flow ends here.
+            return authorization_response(response, logger)
+          else
+            return response
+          end
         end
       end
 
@@ -128,17 +140,15 @@ module Rack
           raise RedirectUriMismatchError unless client.redirect_uri.nil? || client.redirect_uri == redirect_uri.to_s
           requested_scope = request.GET["scope"].to_s.split.uniq.join(" ")
           response_type = request.GET["response_type"].to_s
-          raise UnsupportedResponseTypeError unless supported_authorization_types.include?(response_type)
-          if scopes
+          raise UnsupportedResponseTypeError unless options[:authorization_types].include?(response_type)
+          if scopes = options[:scopes]
             allowed_scopes = scopes.respond_to?(:split) ? scopes.split : scopes
             raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scopes.include?(v) }
           end
           # Create object to track authorization request and let application
           # handle the rest.
-          auth_request = Models::AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
-          request.env["oauth.request"] = auth_request.id.to_s
-          request.env["oauth.client_id"] = client.id.to_s
-          request.env["oauth.scope"] = requested_scope.split
+          auth_request = AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
+          request.env["oauth.authorization"] = auth_request.id.to_s
           logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{response_type} with scope #{requested_scope}" if logger
           return @app.call(request.env)
         rescue Error=>error
@@ -153,12 +163,13 @@ module Rack
       # oauth.response either grants or denies authroization. In either case, we
       # redirect back with the proper response.
       def authorization_response(response, logger)
-        auth_request = Models::AuthRequest.find(response["oauth.request"])
+        status, headers, body = response
+        auth_request = self.class.get_auth_request(headers["oauth.authorization"])
         redirect_uri = URI.parse(auth_request.redirect_uri)
-        if resource = response["oauth.resource"]
-          auth_request.grant! response["oauth.resource"]
-        else
+        if status == 401
           auth_request.deny!
+        else
+          auth_request.grant! body
         end
         # 3.1.  Authorization Response
         if auth_request.response_type == "code" && auth_request.grant_code
@@ -189,23 +200,23 @@ module Rack
           case request.POST["grant_type"]
           when "authorization_code"
             # 4.1.1.  Authorization Code
-            grant = Models::AccessGrant.from_code(request.POST["code"])
+            grant = AccessGrant.from_code(request.POST["code"])
             raise InvalidGrantError unless grant && client.id == grant.client_id
             raise InvalidGrantError unless grant.redirect_uri.nil? || grant.redirect_uri == Utils.parse_redirect_uri(request.POST["redirect_uri"]).to_s
             access_token = grant.authorize!
           when "password"
-            raise UnsupportedGrantType unless @authenticator
+            raise UnsupportedGrantType unless options[:authenticator]
             # 4.1.2.  Resource Owner Password Credentials
             username, password = request.POST.values_at("username", "password")
             requested_scope = request.POST["scope"].to_s.split.uniq.join(" ")
             raise InvalidGrantError unless username && password
-            resource = @authenticator.call(username, password)
+            resource = options[:authenticator].call(username, password)
             raise InvalidGrantError unless resource
-            if scopes
+            if scopes = options[:scopes]
               allowed_scopes = scopes.respond_to?(:split) ? scopes.split : scopes
               raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scopes.include?(v) }
             end
-            access_token = Models::AccessToken.get_token_for(resource, requested_scope.to_s, client.id)
+            access_token = AccessToken.get_token_for(resource, requested_scope.to_s, client.id)
           else raise UnsupportedGrantType
           end
           logger.info "Access token #{access_token.token} granted to client #{client.display_name}, resource #{access_token.resource}" if logger
@@ -232,7 +243,7 @@ module Rack
         else
           client_id, client_secret = request.GET.values_at("client_id", "client_secret")
         end
-        client = Models::Client.find(client_id)
+        client = self.class.get_client(client_id)
         raise InvalidClientError unless client && client.secret == client_secret
         raise InvalidClientError if client.revoked
         return client
@@ -251,7 +262,7 @@ module Rack
 
       # Returns WWW-Authenticate header.
       def unauthorized(request, error = nil)
-        challenge = 'OAuth realm="%s"' % (realm || request.host)
+        challenge = 'OAuth realm="%s"' % (options[:realm] || request.host)
         challenge << ', error="%s", error_description="%s"' % [error.code, error.message] if error
         return [401, { "WWW-Authenticate"=>challenge }, []]
       end
@@ -259,7 +270,6 @@ module Rack
       # Wraps Rack::Request to expose Basic and OAuth authentication
       # credentials.
       class OAuthRequest < Rack::Request
-        include Server::RequestHelpers
 
         AUTHORIZATION_KEYS = %w{HTTP_AUTHORIZATION X-HTTP_AUTHORIZATION X_HTTP_AUTHORIZATION}
 

@@ -259,7 +259,7 @@ class AuthorizationTest < Test::Unit::TestCase
 
   context "unregistered redirect URI" do
     setup do
-      Rack::OAuth2::Models::Client.collection.update({ :_id=>client._id }, { :$set=>{ :redirect_uri=>nil } })
+      Rack::OAuth2::Server::Client.collection.update({ :_id=>client._id }, { :$set=>{ :redirect_uri=>nil } })
       request_authorization :redirect_uri=>"http://uberclient.dot/oz"
     end
     should_ask_user_for_authorization

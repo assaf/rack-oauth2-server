@@ -65,13 +65,13 @@ There are various options you can specify:
   /oauth/access_token.
 - :authorize_path -- Set this if you don't care for the default
   /oauth/authorize.
-- :restricted_path -- All URLs under this path will require authorization. There
-  are other ways to enforce authorization, read below for ideas.
+- :authorization_types -- Supported authorization types are authorization code
+  (code) and access token (token). Set to code or token if you want one of these
+  but not both.
+- :authenticator -- For username/password authorization. A block that
+  receives username/password and returns resource name or nil.
 - :scopes -- Array listing all allowed scopes, space separated list of scopes,
   or nil if you don't care for scopes.
-- :supported_authorization_types -- Supported authorization types are
-  authorization code (code) and access token (token). Set to code or token if
-  you want one of these but not both.
 - :realm -- The authorization realm. This shows up in 401 responses returned to
   the client when it fails to authenticate or authenticates with an invalid
   token.

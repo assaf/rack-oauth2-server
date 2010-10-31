@@ -1,6 +1,6 @@
 module Rack
   module OAuth2
-    module Models
+    class Server
 
       # Access token. This is what clients use to access resources.
       #
@@ -10,21 +10,26 @@ module Rack
         class << self
           # Find AccessToken from token. Does not return revoked tokens.
           def from_token(token)
-            Models.new_instance self, collection.find_one({ :_id=>token, :revoked=>nil })
+            Server.new_instance self, collection.find_one({ :_id=>token, :revoked=>nil })
           end
 
           # Get an access token (create new one if necessary).
           def get_token_for(resource, scope, client_id)
             unless token = collection.find_one({ :resource=>resource, :scope=>scope, :client_id=>client_id })
-              token = { :_id=>Models.secure_random, :resource=>resource, :scope=>scope, :client_id=>client_id,
+              token = { :_id=>Server.secure_random, :resource=>resource, :scope=>scope, :client_id=>client_id,
                         :created_at=>Time.now.utc, :expires_at=>nil, :revoked=>nil }
               collection.insert token
             end
-            Models.new_instance self, token
+            Server.new_instance self, token
+          end
+
+          # Find all AccessTokens for a resource.
+          def from_resource(resource)
+            collection.find({ :resource=>resource }).map { |fields| Server.new_instance self, fields }
           end
 
           def collection
-            Models.db["oauth2.access_tokens"]
+            Server.db["oauth2.access_tokens"]
           end
         end
 

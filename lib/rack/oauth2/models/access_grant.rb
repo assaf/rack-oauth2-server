@@ -1,27 +1,26 @@
 module Rack
   module OAuth2
-    module Models
+    class Server
 
-      # Access grant. This is used for authorization code and refresh token.
       # The access grant is a nonce, new grant created each time we need it and
       # good for redeeming one access token.
       class AccessGrant
         class << self
           # Find AccessGrant from authentication code.
           def from_code(code)
-            Models.new_instance self, collection.find_one({ :_id=>code, :revoked=>nil })
+            Server.new_instance self, collection.find_one({ :_id=>code, :revoked=>nil })
           end
 
           # Create a new access grant.
           def create(resource, scope, client_id, redirect_uri)
-            fields = { :_id=>Models.secure_random, :resource=>resource, :scope=>scope, :client_id=>client_id, :redirect_uri=>redirect_uri,
+            fields = { :_id=>Server.secure_random, :resource=>resource, :scope=>scope, :client_id=>client_id, :redirect_uri=>redirect_uri,
                        :created_at=>Time.now.utc, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
             collection.insert fields
-            Models.new_instance self, fields
+            Server.new_instance self, fields
           end
 
           def collection
-            Models.db["oauth2.access_grants"]
+            Server.db["oauth2.access_grants"]
           end
         end
 
