@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/config"
+require File.dirname(__FILE__) + "/setup"
 
 
 # 3.  Obtaining End-User Authorization
@@ -21,14 +21,13 @@ class AuthorizationTest < Test::Unit::TestCase
     end
 
     def should_ask_user_for_authorization(&block)
-      should "ask user for authorization" do
-        assert SimpleApp.end_user_sees
-      end
       should "should inform user about client" do
-        assert_equal "UberClient", SimpleApp.end_user_sees[:client]
+        response = last_response.body.split("\n").inject({}) { |h,l| n,v = l.split(/:\s*/) ; h[n.downcase] = v ; h }
+        assert_equal "UberClient", response["client"]
       end
       should "should inform user about scope" do
-        assert_equal %w{read write}, SimpleApp.end_user_sees[:scope]
+        response = last_response.body.split("\n").inject({}) { |h,l| n,v = l.split(/:\s*/) ; h[n.downcase] = v ; h }
+        assert_equal "read, write", response["scope"]
       end
     end
 

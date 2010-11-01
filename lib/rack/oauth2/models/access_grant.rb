@@ -20,7 +20,7 @@ module Rack
           end
 
           def collection
-            Server.db["oauth2.access_grants"]
+            Server.database["oauth2.access_grants"]
           end
         end
 

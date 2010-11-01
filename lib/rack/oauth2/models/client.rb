@@ -31,7 +31,7 @@ module Rack
           end
 
           def collection
-            Server.db["oauth2.clients"]
+            Server.database["oauth2.clients"]
           end
         end
 

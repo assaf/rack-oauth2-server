@@ -1,5 +1,7 @@
 require "mongo"
 require "openssl"
+
+
 require "rack/oauth2/models/client"
 require "rack/oauth2/models/auth_request"
 require "rack/oauth2/models/access_grant"
@@ -11,7 +13,7 @@ module Rack
 
       class << self
         # A Mongo::DB object.
-        attr_accessor :db
+        attr_accessor :database
         
         # Create new instance of the klass and populate its attributes.
         def new_instance(klass, fields)

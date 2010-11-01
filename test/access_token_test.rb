@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/config"
+require File.dirname(__FILE__) + "/setup"
 
 
 # 5.  Accessing a Protected Resource
@@ -192,6 +192,30 @@ class AccessTokenTest < Test::Unit::TestCase
       end
       should "respond with scope name" do
         assert_match " scope=\"math\"", last_response["WWW-Authenticate"]
+      end
+    end
+  end
+
+
+  context "setting resource" do
+    context "authenticated" do
+      setup do
+        with_token
+        get "/user"
+      end
+
+      should "render user name" do
+        assert_equal "Superman", last_response.body
+      end
+    end
+
+    context "not authenticated" do
+      setup do
+        get "/user"
+      end
+
+      should "not render user name" do
+        assert  last_response.body.empty?
       end
     end
   end

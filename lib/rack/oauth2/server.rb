@@ -35,10 +35,11 @@ module Rack
 
       def initialize(app, options = {}, &authenticator)
         @app = app
-        @options = { :authenticator=>authenticator,
-                     :access_token_path=>"/oauth/access_token",
-                     :authorize_path=>"/oauth/authorize",
-                     :authorization_types=>%w{code token} }.merge(options)
+        @options = options
+        @options[:authenticator] ||= authenticator
+        @options[:access_token_path] ||= "/oauth/access_token"
+        @options[:authorize_path] ||= "/oauth/authorize"
+        @options[:authorization_types] ||=  %w{code token}
       end
 
       # Options are:
@@ -50,12 +51,15 @@ module Rack
       #   receives username/password and returns resource name or nil.
       # - :authorization_types -- Available authorization types are code and
       #   token, defaults to both.
+      # - :database -- Mongo::DB instance.
       # - :realm -- Authorization realm. 
       # - :scopes -- Array listing all supported scopes, e.g. %w{read write}.
       # - :logger -- Logger to use, otherwise looks for rack.logger.
       attr_reader :options
 
       def call(env)
+        # Use options[:database] if specified.
+        org_database, Server.database = Server.database, options[:database] || Server.database
         logger = options[:logger] || env["rack.logger"]
         request = OAuthRequest.new(env)
 
@@ -116,6 +120,8 @@ module Rack
             return response
           end
         end
+      ensure
+        Server.database = org_database
       end
 
     protected
@@ -142,8 +148,8 @@ module Rack
           response_type = request.GET["response_type"].to_s
           raise UnsupportedResponseTypeError unless options[:authorization_types].include?(response_type)
           if scopes = options[:scopes]
-            allowed_scopes = scopes.respond_to?(:split) ? scopes.split : scopes
-            raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scopes.include?(v) }
+            allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
+            raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scope.include?(v) }
           end
           # Create object to track authorization request and let application
           # handle the rest.
@@ -169,7 +175,7 @@ module Rack
         if status == 401
           auth_request.deny!
         else
-          auth_request.grant! body
+          auth_request.grant! headers["oauth.resource"]
         end
         # 3.1.  Authorization Response
         if auth_request.response_type == "code" && auth_request.grant_code
@@ -213,8 +219,8 @@ module Rack
             resource = options[:authenticator].call(username, password)
             raise InvalidGrantError unless resource
             if scopes = options[:scopes]
-              allowed_scopes = scopes.respond_to?(:split) ? scopes.split : scopes
-              raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scopes.include?(v) }
+              allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
+              raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scope.include?(v) }
             end
             access_token = AccessToken.get_token_for(resource, requested_scope.to_s, client.id)
           else raise UnsupportedGrantType

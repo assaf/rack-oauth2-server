@@ -85,8 +85,8 @@ module Rack
         # specified resource. Don't render anything else.
         def grant!(authorization, resource)
           @response["oauth.authorization"] = authorization
+          @response["oauth.resource"] = resource.to_s
           @response.status = 200
-          @response.body = resource.to_s
         end
 
         # Deny authorization request. Call this at the end of the authorization

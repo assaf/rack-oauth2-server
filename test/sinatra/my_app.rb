@@ -1,4 +1,4 @@
-class SimpleApp < Sinatra::Base
+class MyApp < Sinatra::Base
   use Rack::Logger
   set :sessions, true
 
@@ -7,19 +7,14 @@ class SimpleApp < Sinatra::Base
   oauth[:authenticator] = lambda do |username, password|
     "Superman" if username == "cowbell" && password == "more"
   end
-
-  class << self
-    # What we show the end user when requesting authentication.
-    attr_accessor :end_user_sees
-  end
+  oauth[:database] = DATABASE
 
 
   # 3.  Obtaining End-User Authorization
 
   get "/oauth/authorize" do
-    self.class.end_user_sees = { :client=>oauth.client.display_name,
-                                 :scope=>oauth.scope }
     session["oauth.authorization"] = oauth.authorization
+    "client: #{oauth.client.display_name}\nscope: #{oauth.scope.join(", ")}"
   end
 
   post "/oauth/grant" do
@@ -33,7 +28,7 @@ class SimpleApp < Sinatra::Base
 
   # 5.  Accessing a Protected Resource
 
-  before { @account = oauth.resource if oauth.authenticated? }
+  before { @user = oauth.resource if oauth.authenticated? }
 
   get "/public" do
     if oauth.authenticated?
@@ -58,8 +53,13 @@ class SimpleApp < Sinatra::Base
   get "/calc" do
   end
 
+  get "/user" do
+    @user
+  end
+
   get "/list_tokens" do
     oauth.list_access_tokens("Superman").map(&:token).join(" ")
   end
   
 end
+

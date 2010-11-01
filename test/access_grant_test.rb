@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/config"
+require File.dirname(__FILE__) + "/setup"
 
 
 # 4.  Obtaining an Access Token
