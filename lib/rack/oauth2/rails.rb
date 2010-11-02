@@ -39,11 +39,17 @@ module Rack
     #       @current_user ||= User.find(oauth.resource) if oauth.authenticated?
     #     end
     #   end
+    #
+    # @see Helpers
+    # @see Filters
+    # @see Configuration
     module Rails
 
       # Helper methods available to controller instance and views.
       module Helpers
-        # Returns the OAuth helper (Rack::OAuth2::Helper)
+        # Returns the OAuth helper.
+        #
+        # @return [Server::Helper]
         def oauth
           @oauth ||= Rack::OAuth2::Server::Helper.new(request, response)
         end
@@ -51,6 +57,12 @@ module Rack
 
       # Filter methods available in controller.
       module Filters
+        
+        # Adds before filter to require authentication on all the listed paths.
+        # Use the :scope option if client must also have access to that scope.
+        #
+        # @param [Hash] options Accepts before_filter options like :only and
+        # :except, and the :scope option.
         def oauth_required(options = {})
           scope = options.delete(:scope)
           before_filter options do |controller|
@@ -67,6 +79,10 @@ module Rack
 
       # Configuration methods available in config/environment.rb.
       module Configuration
+
+        # Rack module settings.
+        #
+        # @return [Hash] Settings
         def oauth
           @oauth ||= { :logger=>::Rails.logger }
         end

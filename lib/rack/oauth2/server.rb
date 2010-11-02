@@ -43,18 +43,22 @@ module Rack
       end
 
       # Options are:
-      # - :access_token_path -- Path for requesting access token, defaults to
-      #   /oauth/access_token.
-      # - :authorize_path --  Path for requesting end-user authorization,
-      #   defaults to /oauth/authorize.
+      # - :access_token_path -- Path for requesting access token. By convention
+      #   defaults to /oauth/access_token.
       # - :authenticator -- For username/password authorization. A block that
-      #   receives username/password and returns resource name or nil.
-      # - :authorization_types -- Available authorization types are code and
-      #   token, defaults to both.
+      #   receives the credentials and returns resource string (e.g. user ID) or
+      #   nil.
+      # - :authorization_types -- Array of supported authorization types.
+      #   Defaults to ["code", "token"], and you can change it to just one of
+      #   these names.
+      # - :authorize_path --  Path for requesting end-user authorization. By
+      #   convention defaults to /oauth/authorize.
       # - :database -- Mongo::DB instance.
-      # - :realm -- Authorization realm. 
+      # - :realm -- Authorization realm that will show up in 401 responses.
+      #   Defaults to use the request host name.
       # - :scopes -- Array listing all supported scopes, e.g. %w{read write}.
-      # - :logger -- Logger to use, otherwise looks for rack.logger.
+      # - :logger -- The logger to use. Under Rails, defaults to use the Rails
+      #   logger.  Will use Rack::Logger if available.
       attr_reader :options
 
       def call(env)

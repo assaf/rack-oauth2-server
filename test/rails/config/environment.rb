@@ -1,8 +1,4 @@
-class << Rails
-  def vendor_rails?
-    false
-  end
-end
+require "rack/oauth2/rails"
 
 Rails::Initializer.run do |config|
   config.frameworks = [ :action_controller ]

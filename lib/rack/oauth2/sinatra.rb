@@ -26,10 +26,15 @@ module Rack
     #
     #     before { @user = User.find(oauth.resource) if oauth.authenticated? }
     #   end
+    #
+    # @see Helpers
     module Sinatra
 
       # Adds before filter to require authentication on all the listed paths.
       # Use the :scope option if client must also have access to that scope.
+      #
+      # @param [String, ...] path One or more paths that require authentication
+      # @param [optional, Hash] options Currently only :scope is supported.
       def oauth_required(*args)
         options = args.pop if Hash === args.last
         scope = options[:scope] if options
@@ -47,7 +52,9 @@ module Rack
       end
 
       module Helpers
-        # Returns the OAuth helper (Rack::OAuth2::Helper)
+        # Returns the OAuth helper.
+        #
+        # @return [Server::Helper]
         def oauth
           @oauth ||= Rack::OAuth2::Server::Helper.new(request, response)
         end
@@ -62,4 +69,3 @@ module Rack
     end
   end
 end
-

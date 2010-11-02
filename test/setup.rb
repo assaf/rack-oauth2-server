@@ -18,7 +18,7 @@ case FRAMEWORK
 when "sinatra", nil
 
   require "sinatra/base"
-  require "rack/oauth2/sinatra"
+  puts "Testing with Sinatra #{Sinatra::VERSION}"
   require File.dirname(__FILE__) + "/sinatra/my_app"
   
   class Test::Unit::TestCase
@@ -31,10 +31,16 @@ when "rails2"
 
   require "initializer"
   require "action_controller"
-  require "rack/oauth2/rails"
   RAILS_ROOT = File.dirname(__FILE__) + "/rails"
   RAILS_ENV = "test"
+
+  class << Rails
+    def vendor_rails?
+      false
+    end
+  end
   require RAILS_ROOT + "/config/environment"
+  puts "Testing with Rails #{Rails.version}"
   
   class Test::Unit::TestCase
     def app

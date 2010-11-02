@@ -1,3 +1,5 @@
+require "rack/oauth2/sinatra"
+
 class MyApp < Sinatra::Base
   use Rack::Logger
   set :sessions, true

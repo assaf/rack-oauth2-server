@@ -15,7 +15,7 @@ task :install=>:build do
 end
 
 desc "Push new release to gemcutter and git tag"
-task :push=>["test", "build"] do
+task :push=>["test:all", "build"] do
   sh "git push"
   puts "Tagging version #{spec.version} .."
   sh "git tag v#{spec.version}"
@@ -24,7 +24,6 @@ task :push=>["test", "build"] do
   sh "gem push #{spec.name}-#{spec.version}.gem"
 end
 
-task :default=>:test
 desc "Run all tests"
 Rake::TestTask.new do |task|
   task.test_files = FileList['test/*_test.rb']
@@ -38,6 +37,19 @@ Rake::TestTask.new do |task|
   end
     task.ruby_opts << "-I."
 end
+
+namespace :test do
+  task :all=>["test:sinatra", "test:rails2"]
+  desc "Run all tests against Sinatra"
+  task :sinatra do
+    sh "rake test FRAMEWORK=sinatra"
+  end
+  desc "Run all tests against Rails 2.3.x"
+  task :rails2 do
+    sh "rake test FRAMEWORK=rails2"
+  end
+end
+task :default=>"test:all"
 
 YARD::Rake::YardocTask.new do |doc|
   doc.files = FileList["lib/**/*.rb"]
