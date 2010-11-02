@@ -24,7 +24,7 @@ module Rack
     #     oauth_required "/api"
     #     oauth_required "/api/edit", :scope=>"write"
     #
-    #     before { @user = User.find(oauth.resource) if oauth.authenticated? }
+    #     before { @user = User.find(oauth.identity) if oauth.authenticated? }
     #   end
     #
     # @see Helpers
@@ -56,14 +56,14 @@ module Rack
         #
         # @return [Server::Helper]
         def oauth
-          @oauth ||= Rack::OAuth2::Server::Helper.new(request, response)
+          @oauth ||= Server::Helper.new(request, response)
         end
       end
 
       def self.registered(base)
         base.helpers Helpers
-        base.set :oauth, {}
-        base.use Rack::OAuth2::Server, base.settings.oauth
+        base.set :oauth, Server::Options.new
+        base.use Server, base.settings.oauth
       end
 
     end

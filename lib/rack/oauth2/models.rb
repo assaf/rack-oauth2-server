@@ -1,12 +1,6 @@
 require "mongo"
 require "openssl"
 
-
-require "rack/oauth2/models/client"
-require "rack/oauth2/models/auth_request"
-require "rack/oauth2/models/access_grant"
-require "rack/oauth2/models/access_token"
-
 module Rack
   module OAuth2
     class Server
@@ -29,9 +23,28 @@ module Rack
         def secure_random
           OpenSSL::Random.random_bytes(32).unpack("H*")[0]
         end
-
+        
+        # @private
+        def create_indexes(&block)
+          if block
+            @create_indexes ||= []
+            @create_indexes << block
+          elsif @create_indexes
+            @create_indexes.each do |block|
+              block.call
+            end
+            @create_indexes = nil
+          end
+        end
       end
 
     end
   end
 end
+
+
+require "rack/oauth2/models/client"
+require "rack/oauth2/models/auth_request"
+require "rack/oauth2/models/access_grant"
+require "rack/oauth2/models/access_token"
+

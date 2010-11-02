@@ -28,12 +28,12 @@ module Rack
           !!access_token
         end
 
-        # Returns the authenticated resource. Only applies if client
+        # Returns the authenticated identity. Only applies if client
         # authenticated.
         #
-        # @return [String, nil] Resource, if authenticated
-        def resource
-          @resource ||= @request.env["oauth.resource"]
+        # @return [String, nil] Identity, if authenticated
+        def identity
+          @identity ||= @request.env["oauth.identity"]
         end
 
         # Returns the Client object associated with this request. Available if
@@ -100,14 +100,14 @@ module Rack
 
         # Grant authorization request. Call this at the end of the authorization
         # flow to signal that the user has authorized the client to access the
-        # specified resource. Don't render anything else.
+        # specified identity. Don't render anything else.
         #
         # @param [String] authorization Authorization handle
-        # @param [String] resource Resource string
+        # @param [String] identity Identity string
         # @return 200
-        def grant!(authorization, resource)
+        def grant!(authorization, identity)
           @response["oauth.authorization"] = authorization
-          @response["oauth.resource"] = resource.to_s
+          @response["oauth.identity"] = identity.to_s
           @response.status = 200
         end
 
@@ -122,17 +122,17 @@ module Rack
           @response.status = 401
         end
 
-        # Returns all access tokens associated with this resource.
+        # Returns all access tokens associated with this identity.
         #
-        # @param [String] resource Resource string
+        # @param [String] identity Identity string
         # @return [Array<AccessToken>]
-        def list_access_tokens(resource)
-          Rack::OAuth2::Server.list_access_tokens(resource)
+        def list_access_tokens(identity)
+          Rack::OAuth2::Server.list_access_tokens(identity)
         end
 
         def inspect
           authorization ? "Authorization request for #{scope.join(",")} on behalf of #{client.display_name}" :
-          authenticated? ? "Authenticated as #{resource}" : nil
+          authenticated? ? "Authenticated as #{identity}" : nil
         end
 
       end

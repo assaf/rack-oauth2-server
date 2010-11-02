@@ -24,15 +24,15 @@ support a different database engine, send us a pull request.
 
 == Step 2: Use The Server
 
-For Rails 2.3.x, you can require +rack/oauth2/rails+ and configure the server
-from +config/environment.rb+. For example:
-
-  require "rack/oauth2/rails"
+For Rails 2.3.x, Rack::OAuth2::Server automatically adds itself as middleware
+when required, but you do need to configure it from within
++config/environment.rb+ (or one of the specific environment files). For
+example:
 
   Rails::Initializer.run do |config|
-    config.oauth[:database] = Mongo::Connection.new["my_db"]
-    config.oauth[:scopes] = %w{read write}
-    config.oauth[:authenticator] = lambda do |username, password|
+    config.oauth.database = Mongo::Connection.new["my_db"]
+    config.oauth.scopes = %w{read write}
+    config.oauth.authenticator = lambda do |username, password|
       user = User.find(username)
       user if user && user.authenticated?(password)
     end
@@ -40,17 +40,17 @@ from +config/environment.rb+. For example:
     . . .
   end
 
-For Sinatra and Padrino, you can require +rack/oauth2/sinatra+ and register
-{Rack::OAuth2::Sinatra} into your application. For example:
+For Sinatra and Padrino, first require +rack/oauth2/sinatra+ and register
+Rack::OAuth2::Sinatra into your application. For example:
 
   require "rack/oauth2/sinatra"
 
   class MyApp < Sinatra::Base
     register Rack::OAuth2::Sinatra
 
-    oauth[:database] = Mongo::Connection.new["my_db"]
-    oauth[:scopes] = %w{read write}
-    oauth[:authenticator] = lambda do |username, password|
+    oauth.database = Mongo::Connection.new["my_db"]
+    oauth.scopes = %w{read write}
+    oauth.authenticator = lambda do |username, password|
       user = User.find(username)
       user if user && user.authenticated?(password)
     end
@@ -58,15 +58,15 @@ For Sinatra and Padrino, you can require +rack/oauth2/sinatra+ and register
     . . .
   end
 
-With any other Rack server, you can +use Rack::OAuth2::Server+ with a hash of
-configuration options.
+With any other Rack server, you can +use Rack::OAuth2::Server+ and pass your
+own {Rack::OAuth2::Server::Options} object.
 
 The configuration options are:
 
 - +:access_token_path+ -- Path for requesting access token. By convention
   defaults to +/oauth/access_token+.
 - +:authenticator+ -- For username/password authorization. A block that
-  receives the credentials and returns resource string (e.g. user ID) or nil.
+  receives the credentials and returns identity string (e.g. user ID) or nil.
 - +:authorization_types+ -- Array of supported authorization types. Defaults to
   ["code", "token"], and you can change it to just one of these names.
 - +:authorize_path+ --  Path for requesting end-user authorization. By
@@ -87,36 +87,33 @@ quite handy during development/testing.
 
 == Step 3: Let Users Authorize
 
-Authorization requests go to +/oauth/authorize+. {Rack::OAuth2::Server}
+Authorization requests go to +/oauth/authorize+. Rack::OAuth2::Server
 intercepts these requests and validates the client ID, secret, redirect URI,
 authorization type and scope. If the request fails validation, the user is
 redirected back to the client application with a suitable error code.
 
-If the request passes validation, {Rack::OAuth2::Server} sets the request
-header +oauth.authorization+ to the authorization handle, and passes control to
-your application. Your application will ask the user to grant or deny the
+If the request passes validation, Rack::OAuth2::Server sets the request header
++oauth.authorization+ to the authorization handle, and passes control to your
+application. Your application will ask the user to grant or deny the
 authorization request.
 
 Once granted, your application signals the grant by setting the response header
 +oauth.authorization+ to the authorization handle it got before, and setting
-the response header +oauth.resource+ to the authorized resource. This is
+the response header +oauth.identity+ to the authorized identity. This is
 typicaly the user ID or account ID, but can be anything you want, as long as
-it's a string. {Rack::OAuth2::Server} intercepts this response and redirects
-the user back to the client application with an authorization code or access
-token.
+it's a string. Rack::OAuth2::Server intercepts this response and redirects the
+user back to the client application with an authorization code or access token.
 
 To signal that the user denied the authorization requests your application sets
 the response header oauth.authorization as before, and returns the status code
-401 (Unauthorized). {Rack::OAuth2::Server} will then redirect the user back to
+401 (Unauthorized). Rack::OAuth2::Server will then redirect the user back to
 the client application with a suitable error code.
 
 In Rails, the entire flow would look something like this:
 
   class OauthController < ApplicationController
     def authorize
-      @authorization = oauth.authorization
-      @client = oauth.client
-      @scope = oauth.scope
+      oauth.authorization ||= params[:authorization]
     end
 
     def grant
@@ -136,9 +133,7 @@ method.
 In Sinatra/Padrino, it would look something like this:
 
   get "/oauth/authorize" do
-    @authorization = oauth.authorization
-    @client = oauth.client
-    @scope = oauth.scope
+    oauth.authorization ||= params[:authorization]
     render "oauth/authorize"
   end
 
@@ -152,26 +147,26 @@ In Sinatra/Padrino, it would look something like this:
 
 The view would look something like this:
 
-  <h2>The application <% link_to h(@client.display_name), @client.link %>
-    is requesting to <%= @scope.to_sentence %> your account.</h2>
+  <h2>The application <% link_to h(oauth.client.display_name), oauth.client.link %>
+    is requesting to <%= oauth.scope.to_sentence %> your account.</h2>
   <form action="/oauth/grant">
     <button>Grant</button>
-    <input type="hidden" name="authorization" value="<%= @authorization %>">
+    <input type="hidden" name="authorization" value="<%= oauth.authorization %>">
   </form>
   <form action="/oauth/deny">
     <button>Deny</button>
-    <input type="hidden" name="authorization" value="<%= @authorization %>">
+    <input type="hidden" name="authorization" value="<%= oauth.authorization %>">
   </form>
 
 
 == Step 4: Protect Your Path
 
-{Rack::OAuth2::Server} intercepts all incoming requests and looks for either
+Rack::OAuth2::Server intercepts all incoming requests and looks for either
 OAuth authentication header, or +oauth_token+ parameter. If it finds either
 one, and the access token is still valid, it sets the request header
-+oauth.resource+ to the value you supplied during authorization (step 3).
++oauth.identity+ to the value you supplied during authorization (step 3).
 
-You can use +oauth.resource+ to resolve the access token back to user, account
+You can use +oauth.identity+ to resolve the access token back to user, account
 or whatever you put there.
 
 If the access token is invalid or revoked, it returns 401 (Unauthorized) to the
@@ -221,7 +216,7 @@ In Rails, it would look something like this:
   protected
 
     def set_current_user
-      @current_user = User.find(oauth.resource) if oauth.authenticated?
+      @current_user = User.find(oauth.identity) if oauth.authenticated?
     end
     
   end
@@ -229,7 +224,7 @@ In Rails, it would look something like this:
 In Sinatra/Padrino, it would look something like this:
 
   before do
-    @current_user = User.find(oauth.resource) if oauth.authenticated?
+    @current_user = User.find(oauth.identity) if oauth.authenticated?
   end
 
   oauth_required "/private"
@@ -335,7 +330,7 @@ production access tokens.
 == Mandatory ASCII Diagram
 
 This is briefly what the authorization flow looks like, how the workload is
-split between {Rack::OAuth2::Server} and your application, and the protocol the
+split between Rack::OAuth2::Server and your application, and the protocol the
 two use to control the authorization flow:
 
                              Rack::OAuth2::Server
@@ -350,14 +345,14 @@ two use to control the authorization flow:
      | Authenticate user |    | Ask user to grant/ |    | Set response        |
   -> |                   | -> | deny client access | -> |                     | ->
      |                   |    | to their account   |    | oauth.authorization |
-     |                   |    |                    |    | oauth.resource      |
+     |                   |    |                    |    | oauth.identity      |
      --------------------     ----------------------    -----------------------
 
       Rack::OAuth2::Server
      -----------------------    
      | Create access grant |    
   -> | or access token for | -> Redirect back
-     | oauth.resource      |    to client app
+     | oauth.identity      |    to client app
      -----------------------
 
 
@@ -394,7 +389,7 @@ identifier.
 
 Granting an authorization request (by calling +grant!+) creates an access grant or
 access token, depending on the requested response type, and associates it with
-the resource.
+the identity.
 
 === Access Grant
 
@@ -404,9 +399,10 @@ code") and all the data it needs to create an access token.
 
 === Access Token
 
-An access token allows the client to access a resource with the given scope. It
-keeps track of the account identifier (supplied by the application), client
-identifier and scope (both supplied by the client).
+An access token allows the client to access the resource with the given scope
+on behalf of a given identity. It keeps track of the account identifier
+(supplied by the application), client identifier and scope (both supplied by
+the client).
 
 An {Rack::OAuth2::Server::AccessToken} is created by copying values from an
 +AuthRequest+ or +AccessGrant+, and remains in effect until revoked. (OAuth 2.0
@@ -415,9 +411,9 @@ access tokens can also expire, but we don't support expiration at the moment)
 
 == Credits
 
-{Rack::OAuth2::Server} was written to provide authorization/authentication for
+Rack::OAuth2::Server was written to provide authorization/authentication for
 the new Flowtown API[http://developer.flowtown.com]. Thanks to
 Flowtown[http://flowtown.com] for making it happen and allowing it to be open
 sourced. 
 
-{Rack::OAuth2::Server} is available under the MIT license.
+Rack::OAuth2::Server is available under the MIT license.

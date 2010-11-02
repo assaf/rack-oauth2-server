@@ -5,7 +5,7 @@ class ApiController < ApplicationController
 
   def public
     if oauth.authenticated?
-      render :text=>"HAI from #{oauth.resource}"
+      render :text=>"HAI from #{oauth.identity}"
     else
       render :text=>"HAI"
     end
@@ -34,7 +34,7 @@ class ApiController < ApplicationController
 protected
 
   def current_user
-     @current_user ||= oauth.resource if oauth.authenticated?
+     @current_user ||= oauth.identity if oauth.authenticated?
   end
   
 end

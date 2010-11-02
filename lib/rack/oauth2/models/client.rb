@@ -30,6 +30,14 @@ module Rack
             Server.new_instance self, fields
           end
 
+          # Lookup client by ID, display name or URL.
+          def lookup(field)
+            id = BSON::ObjectId(field.to_s)
+            Server.new_instance self, collection.find_one(id)
+          rescue BSON::InvalidObjectId
+            Server.new_instance self, collection.find_one({ :display_name=>field }) || collection.find_one({ :link=>field })
+          end
+
           def collection
             Server.database["oauth2.clients"]
           end
@@ -64,8 +72,12 @@ module Rack
           AccessToken.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
         end
 
-        #collection.create_index [[:display_name, Mongo::ASCENDING]]
-        #collection.create_index [[:link, Mongo::ASCENDING]]
+        Server.create_indexes do
+          # For quickly returning clients sorted by display name, or finding
+          # client from a URL.
+          collection.create_index [[:display_name, Mongo::ASCENDING]]
+          collection.create_index [[:link, Mongo::ASCENDING]]
+        end
       end
 
     end

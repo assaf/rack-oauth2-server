@@ -27,26 +27,18 @@ module Rack
           AccessToken.from_token(token)
         end
 
-        # Returns all AccessTokens for a resource.
-        def list_access_tokens(resource)
-          AccessToken.from_resource(resource)
+        # Returns all AccessTokens for an identity.
+        def list_access_tokens(identity)
+          AccessToken.from_identity(identity)
         end
-      end
 
-      def initialize(app, options = {}, &authenticator)
-        @app = app
-        @options = options
-        @options[:authenticator] ||= authenticator
-        @options[:access_token_path] ||= "/oauth/access_token"
-        @options[:authorize_path] ||= "/oauth/authorize"
-        @options[:authorization_types] ||=  %w{code token}
       end
 
       # Options are:
       # - :access_token_path -- Path for requesting access token. By convention
       #   defaults to /oauth/access_token.
       # - :authenticator -- For username/password authorization. A block that
-      #   receives the credentials and returns resource string (e.g. user ID) or
+      #   receives the credentials and returns identity string (e.g. user ID) or
       #   nil.
       # - :authorization_types -- Array of supported authorization types.
       #   Defaults to ["code", "token"], and you can change it to just one of
@@ -59,19 +51,32 @@ module Rack
       # - :scopes -- Array listing all supported scopes, e.g. %w{read write}.
       # - :logger -- The logger to use. Under Rails, defaults to use the Rails
       #   logger.  Will use Rack::Logger if available.
+      Options = Struct.new(:access_token_path, :authenticator, :authorization_types,
+        :authorize_path, :database, :realm, :scopes, :logger)
+
+      def initialize(app, options = Options.new, &authenticator)
+        @app = app
+        @options = options
+        @options.authenticator ||= authenticator
+        @options.access_token_path ||= "/oauth/access_token"
+        @options.authorize_path ||= "/oauth/authorize"
+        @options.authorization_types ||=  %w{code token}
+      end
+
+      # @see Options
       attr_reader :options
 
       def call(env)
-        # Use options[:database] if specified.
-        org_database, Server.database = Server.database, options[:database] || Server.database
-        logger = options[:logger] || env["rack.logger"]
+        # Use options.database if specified.
+        org_database, Server.database = Server.database, options.database || Server.database
+        logger = options.logger || env["rack.logger"]
         request = OAuthRequest.new(env)
 
         # 3.  Obtaining End-User Authorization
         # Flow starts here.
-        return request_authorization(request, logger) if request.path == options[:authorize_path]
+        return request_authorization(request, logger) if request.path == options.authorize_path
         # 4.  Obtaining an Access Token
-        return respond_with_access_token(request, logger) if request.path == options[:access_token_path]
+        return respond_with_access_token(request, logger) if request.path == options.access_token_path
 
         # 5.  Accessing a Protected Resource
         if request.authorization
@@ -89,8 +94,8 @@ module Rack
             raise InvalidTokenError if access_token.nil? || access_token.revoked
             raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.utc
             request.env["oauth.access_token"] = token
-            request.env["oauth.resource"] = access_token.resource
-            logger.info "Authorized #{access_token.resource}" if logger
+            request.env["oauth.identity"] = access_token.identity
+            logger.info "Authorized #{access_token.identity}" if logger
           rescue Error=>error
             # 5.2.  The WWW-Authenticate Response Header Field
             logger.info "HTTP authorization failed #{error.code}" if logger
@@ -106,7 +111,7 @@ module Rack
           if response[0] == 403
             scope = response[1]["oauth.no_scope"] || ""
             scope = scope.join(" ") if scope.respond_to?(:join)
-            challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options[:realm] || request.host), scope]
+            challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scope]
             return [403, { "WWW-Authenticate"=>challenge }, []]
           else
             return response
@@ -150,8 +155,8 @@ module Rack
           raise RedirectUriMismatchError unless client.redirect_uri.nil? || client.redirect_uri == redirect_uri.to_s
           requested_scope = request.GET["scope"].to_s.split.uniq.join(" ")
           response_type = request.GET["response_type"].to_s
-          raise UnsupportedResponseTypeError unless options[:authorization_types].include?(response_type)
-          if scopes = options[:scopes]
+          raise UnsupportedResponseTypeError unless options.authorization_types.include?(response_type)
+          if scopes = options.scopes
             allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
             raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scope.include?(v) }
           end
@@ -179,7 +184,7 @@ module Rack
         if status == 401
           auth_request.deny!
         else
-          auth_request.grant! headers["oauth.resource"]
+          auth_request.grant! headers["oauth.identity"]
         end
         # 3.1.  Authorization Response
         if auth_request.response_type == "code" && auth_request.grant_code
@@ -215,21 +220,21 @@ module Rack
             raise InvalidGrantError unless grant.redirect_uri.nil? || grant.redirect_uri == Utils.parse_redirect_uri(request.POST["redirect_uri"]).to_s
             access_token = grant.authorize!
           when "password"
-            raise UnsupportedGrantType unless options[:authenticator]
+            raise UnsupportedGrantType unless options.authenticator
             # 4.1.2.  Resource Owner Password Credentials
             username, password = request.POST.values_at("username", "password")
             requested_scope = request.POST["scope"].to_s.split.uniq.join(" ")
             raise InvalidGrantError unless username && password
-            resource = options[:authenticator].call(username, password)
-            raise InvalidGrantError unless resource
-            if scopes = options[:scopes]
+            identity = options.authenticator.call(username, password)
+            raise InvalidGrantError unless identity
+            if scopes = options.scopes
               allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
               raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scope.include?(v) }
             end
-            access_token = AccessToken.get_token_for(resource, requested_scope.to_s, client.id)
+            access_token = AccessToken.get_token_for(identity, requested_scope.to_s, client.id)
           else raise UnsupportedGrantType
           end
-          logger.info "Access token #{access_token.token} granted to client #{client.display_name}, resource #{access_token.resource}" if logger
+          logger.info "Access token #{access_token.token} granted to client #{client.display_name}, identity #{access_token.identity}" if logger
           response = { :access_token=>access_token.token }
           response[:scope] = access_token.scope unless access_token.scope.empty?
           return [200, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, response.to_json]
@@ -272,7 +277,7 @@ module Rack
 
       # Returns WWW-Authenticate header.
       def unauthorized(request, error = nil)
-        challenge = 'OAuth realm="%s"' % (options[:realm] || request.host)
+        challenge = 'OAuth realm="%s"' % (options.realm || request.host)
         challenge << ', error="%s", error_description="%s"' % [error.code, error.message] if error
         return [401, { "WWW-Authenticate"=>challenge }, []]
       end

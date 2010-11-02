@@ -12,8 +12,8 @@ module Rack
           end
 
           # Create a new access grant.
-          def create(resource, scope, client_id, redirect_uri)
-            fields = { :_id=>Server.secure_random, :resource=>resource, :scope=>scope, :client_id=>client_id, :redirect_uri=>redirect_uri,
+          def create(identity, scope, client_id, redirect_uri)
+            fields = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope, :client_id=>client_id, :redirect_uri=>redirect_uri,
                        :created_at=>Time.now.utc, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
             collection.insert fields
             Server.new_instance self, fields
@@ -27,8 +27,8 @@ module Rack
         # Authorization code. We are nothing without it.
         attr_reader :_id
         alias :code :_id
-        # The resource we authorized access to.
-        attr_reader :resource
+        # The identity we authorized access to.
+        attr_reader :identity
         # Client that was granted this access token.
         attr_reader :client_id
         # Redirect URI for this grant.
@@ -52,7 +52,7 @@ module Rack
         # InvalidGrantError.
         def authorize!
           raise InvalidGrantError if self.access_token || self.revoked
-          access_token = AccessToken.get_token_for(resource, scope, client_id)
+          access_token = AccessToken.get_token_for(identity, scope, client_id)
           self.access_token = access_token.token
           self.granted_at = Time.now.utc
           self.class.collection.update({ :_id=>code, :access_token=>nil, :revoked=>nil }, { :$set=>{ :granted_at=>granted_at, :access_token=>access_token.token } }, :safe=>true)
@@ -65,9 +65,10 @@ module Rack
           self.class.collection.update({ :_id=>code, :revoked=>nil }, { :$set=>{ :revoked=>Time.now.utc } })
         end
 
-        # Allows us to kill all pending grants on behalf of client/resource.
-        #collection.create_index [[:client_id, Mongo::ASCENDING]]
-        #collection.create_index [[:resource, Mongo::ASCENDING]]
+        Server.create_indexes do
+          # Used to revoke all pending access grants when revoking client.
+          collection.create_index [[:client_id, Mongo::ASCENDING]]
+        end
       end
 
     end

@@ -36,7 +36,7 @@ module Rack
     #
     #   protected 
     #     def current_user
-    #       @current_user ||= User.find(oauth.resource) if oauth.authenticated?
+    #       @current_user ||= User.find(oauth.identity) if oauth.authenticated?
     #     end
     #   end
     #
@@ -84,7 +84,7 @@ module Rack
         #
         # @return [Hash] Settings
         def oauth
-          @oauth ||= { :logger=>::Rails.logger }
+          @oauth ||= Server::Options.new
         end
       end
 
@@ -92,14 +92,3 @@ module Rack
 
   end
 end
-
-class Rails::Configuration
-  include Rack::OAuth2::Rails::Configuration
-end
-class ActionController::Base
-  helper Rack::OAuth2::Rails::Helpers
-  include Rack::OAuth2::Rails::Helpers
-  extend Rack::OAuth2::Rails::Filters
-end
-# Add middleware now, but load configuration as late as possible.
-ActionController::Dispatcher.middleware.use Rack::OAuth2::Server, lambda { Rails.configuration.oauth }

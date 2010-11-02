@@ -52,20 +52,20 @@ module Rack
         # Timestamp if revoked.
         attr_accessor :revoked
 
-        # Grant access to the specified resource.
-        def grant!(resource)
-          raise ArgumentError, "Must supply a resource" unless resource
+        # Grant access to the specified identity.
+        def grant!(identity)
+          raise ArgumentError, "Must supply a identity" unless identity
           return if revoked
           self.authorized_at = Time.now.utc
           if response_type == "code" # Requested authorization code
             unless self.grant_code
-              access_grant = AccessGrant.create(resource, scope, client_id, redirect_uri)
+              access_grant = AccessGrant.create(identity, scope, client_id, redirect_uri)
               self.grant_code = access_grant.code
               self.class.collection.update({ :_id=>id, :revoked=>nil }, { :$set=>{ :grant_code=>access_grant.code, :authorized_at=>authorized_at } })
             end
           else # Requested access token
             unless self.access_token
-              access_token = AccessToken.get_token_for(resource, scope, client_id)
+              access_token = AccessToken.get_token_for(identity, scope, client_id)
               self.access_token = access_token.token
               self.class.collection.update({ :_id=>id, :revoked=>nil, :access_token=>nil }, { :$set=>{ :access_token=>access_token.token, :authorized_at=>authorized_at } })
             end
@@ -79,8 +79,11 @@ module Rack
           self.class.collection.update({ :_id=>id }, { :$set=>{ :authorized_at=>authorized_at } })
         end
 
-        # Allows us to kill all pending request on behalf of client.
-        #collection.create_index [[:client_id, Mongo::ASCENDING]]
+        Server.create_indexes do
+          # Used to revoke all pending access grants when revoking client.
+          collection.create_index [[:client_id, Mongo::ASCENDING]]
+        end
+
       end
 
     end

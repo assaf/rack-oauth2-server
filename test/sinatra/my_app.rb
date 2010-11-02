@@ -5,11 +5,11 @@ class MyApp < Sinatra::Base
   set :sessions, true
 
   register Rack::OAuth2::Sinatra
-  oauth[:scopes] = %w{read write}
-  oauth[:authenticator] = lambda do |username, password|
+  oauth.scopes = %w{read write}
+  oauth.authenticator = lambda do |username, password|
     "Superman" if username == "cowbell" && password == "more"
   end
-  oauth[:database] = DATABASE
+  oauth.database = DATABASE
 
 
   # 3.  Obtaining End-User Authorization
@@ -30,11 +30,11 @@ class MyApp < Sinatra::Base
 
   # 5.  Accessing a Protected Resource
 
-  before { @user = oauth.resource if oauth.authenticated? }
+  before { @user = oauth.identity if oauth.authenticated? }
 
   get "/public" do
     if oauth.authenticated?
-      "HAI from #{oauth.resource}"
+      "HAI from #{oauth.identity}"
     else
       "HAI"
     end
