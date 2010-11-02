@@ -113,7 +113,6 @@ In Rails, the entire flow would look something like this:
 
   class OauthController < ApplicationController
     def authorize
-      oauth.authorization ||= params[:authorization]
     end
 
     def grant
@@ -133,7 +132,6 @@ method.
 In Sinatra/Padrino, it would look something like this:
 
   get "/oauth/authorize" do
-    oauth.authorization ||= params[:authorization]
     render "oauth/authorize"
   end
 

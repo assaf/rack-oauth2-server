@@ -140,38 +140,50 @@ module Rack
       # authorization request, set in oauth.request and pass control to the
       # application.
       def request_authorization(request, logger)
-        # 3.  Obtaining End-User Authorization
-        begin
-          redirect_uri = Utils.parse_redirect_uri(request.GET["redirect_uri"])
-        rescue InvalidRequestError=>error
-          logger.error "Authorization request with invalid redirect_uri: #{request.GET["redirect_uri"]} #{error.message}" if logger
-          return bad_request(error.message)
-        end
         state = request.GET["state"]
-
-        begin
-          # 3. Obtaining End-User Authorization
-          client = get_client(request)
-          raise RedirectUriMismatchError unless client.redirect_uri.nil? || client.redirect_uri == redirect_uri.to_s
-          requested_scope = request.GET["scope"].to_s.split.uniq.join(" ")
-          response_type = request.GET["response_type"].to_s
-          raise UnsupportedResponseTypeError unless options.authorization_types.include?(response_type)
-          if scopes = options.scopes
-            allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
-            raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scope.include?(v) }
+        if request.GET["authorization"]
+          auth_request = self.class.get_auth_request(request.GET["authorization"]) rescue nil
+          if !auth_request || auth_request.revoked
+            logger.error "Invalid authorization request #{auth_request}" if logger
+            return bad_request("Invalid authorization request")
           end
-          # Create object to track authorization request and let application
-          # handle the rest.
-          auth_request = AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
-          request.env["oauth.authorization"] = auth_request.id.to_s
-          logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{response_type} with scope #{requested_scope}" if logger
-          return @app.call(request.env)
-        rescue Error=>error
-          logger.error "Authorization request error: #{error.code} #{error.message}" if logger
-          params = Rack::Utils.parse_query(redirect_uri.query).merge(:error=>error.code, :error_description=>error.message, :state=>state)
-          redirect_uri.query = Rack::Utils.build_query(params)
-          return redirect_to(redirect_uri)
+          client = self.class.get_client(auth_request.client_id)
+
+        else
+
+          # 3.  Obtaining End-User Authorization
+          begin
+            redirect_uri = Utils.parse_redirect_uri(request.GET["redirect_uri"])
+          rescue InvalidRequestError=>error
+            logger.error "Authorization request with invalid redirect_uri: #{request.GET["redirect_uri"]} #{error.message}" if logger
+            return bad_request(error.message)
+          end
+
+          begin
+            # 3. Obtaining End-User Authorization
+            client = get_client(request)
+            raise RedirectUriMismatchError unless client.redirect_uri.nil? || client.redirect_uri == redirect_uri.to_s
+            requested_scope = request.GET["scope"].to_s.split.uniq.join(" ")
+            response_type = request.GET["response_type"].to_s
+            raise UnsupportedResponseTypeError unless options.authorization_types.include?(response_type)
+            if scopes = options.scopes
+              allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
+              raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scope.include?(v) }
+            end
+            # Create object to track authorization request and let application
+            # handle the rest.
+            auth_request = AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
+          rescue Error=>error
+            logger.error "Authorization request error: #{error.code} #{error.message}" if logger
+            params = Rack::Utils.parse_query(redirect_uri.query).merge(:error=>error.code, :error_description=>error.message, :state=>state)
+            redirect_uri.query = Rack::Utils.build_query(params)
+            return redirect_to(redirect_uri)
+          end
         end
+
+        request.env["oauth.authorization"] = auth_request.id.to_s
+        logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope}" if logger
+        return @app.call(request.env)
       end
 
       # Get here on completion of the authorization. Authorization response in

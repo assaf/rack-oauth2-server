@@ -58,17 +58,13 @@ module Rack
           return if revoked
           self.authorized_at = Time.now.utc
           if response_type == "code" # Requested authorization code
-            unless self.grant_code
-              access_grant = AccessGrant.create(identity, scope, client_id, redirect_uri)
-              self.grant_code = access_grant.code
-              self.class.collection.update({ :_id=>id, :revoked=>nil }, { :$set=>{ :grant_code=>access_grant.code, :authorized_at=>authorized_at } })
-            end
+            access_grant = AccessGrant.create(identity, scope, client_id, redirect_uri)
+            self.grant_code = access_grant.code
+            self.class.collection.update({ :_id=>id, :revoked=>nil }, { :$set=>{ :grant_code=>access_grant.code, :authorized_at=>authorized_at } })
           else # Requested access token
-            unless self.access_token
-              access_token = AccessToken.get_token_for(identity, scope, client_id)
-              self.access_token = access_token.token
-              self.class.collection.update({ :_id=>id, :revoked=>nil, :access_token=>nil }, { :$set=>{ :access_token=>access_token.token, :authorized_at=>authorized_at } })
-            end
+            access_token = AccessToken.get_token_for(identity, scope, client_id)
+            self.access_token = access_token.token
+            self.class.collection.update({ :_id=>id, :revoked=>nil, :access_token=>nil }, { :$set=>{ :access_token=>access_token.token, :authorized_at=>authorized_at } })
           end
           true
         end

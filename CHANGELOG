@@ -1,3 +1,8 @@
+2010-11-02 version 1.2.0
+
+You can now redirect to /oauth/authorize with authorization query parameter and
+it will do the right thing.
+
 2010-11-02 version 1.1.1
 
 Fixed missing rails/init.rb.

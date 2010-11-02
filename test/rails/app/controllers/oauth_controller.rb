@@ -1,7 +1,7 @@
 class OauthController < ApplicationController
   def authorize
     session["oauth.authorization"] = oauth.authorization
-    render :text=>"client: #{oauth.client.display_name}\nscope: #{oauth.scope.join(", ")}"
+    render :text=>"client: #{oauth.client.display_name}\nscope: #{oauth.scope.join(", ")}\nauthorization: #{oauth.authorization}"
   end
 
   def grant

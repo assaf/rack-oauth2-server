@@ -254,6 +254,43 @@ class AuthorizationTest < Test::Unit::TestCase
   end
 
 
+  # Using existing authorization request
+
+  context "with authorization request" do
+    setup do
+      request_authorization
+      response = last_response.body.split("\n").inject({}) { |h,l| n,v = l.split(/:\s*/) ; h[n.downcase] = v ; h }
+      get "/oauth/authorize?" + Rack::Utils.build_query(:authorization=>response["authorization"])
+    end
+
+    should_ask_user_for_authorization
+  end
+
+  context "with invalid authorization request" do
+    setup do
+      request_authorization
+      get "/oauth/authorize?" + Rack::Utils.build_query(:authorization=>"foobar")
+    end
+
+    should "return status 400" do
+      assert_equal 400, last_response.status
+    end
+  end
+
+  context "with revoked authorization request" do
+    setup do
+      request_authorization
+      response = last_response.body.split("\n").inject({}) { |h,l| n,v = l.split(/:\s*/) ; h[n.downcase] = v ; h }
+      client.revoke!
+      get "/oauth/authorize?" + Rack::Utils.build_query(:authorization=>response["authorization"])
+    end
+
+    should "return status 400" do
+      assert_equal 400, last_response.status
+    end
+  end
+
+
   # Edge cases
 
   context "unregistered redirect URI" do

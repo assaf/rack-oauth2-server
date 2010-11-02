@@ -16,7 +16,7 @@ class MyApp < Sinatra::Base
 
   get "/oauth/authorize" do
     session["oauth.authorization"] = oauth.authorization
-    "client: #{oauth.client.display_name}\nscope: #{oauth.scope.join(", ")}"
+    "client: #{oauth.client.display_name}\nscope: #{oauth.scope.join(", ")}\nauthorization: #{oauth.authorization}"
   end
 
   post "/oauth/grant" do
