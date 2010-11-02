@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.description    = "Because you don't allow strangers into your app, and OAuth 2.0 is the new awesome."
   spec.post_install_message = ""
 
-  spec.files          = Dir["{bin,lib,test}/**/*", "CHANGELOG", "MIT-LICENSE", "README.rdoc", "Rakefile", "Gemfile", "*.gemspec"]
+  spec.files          = Dir["{bin,lib,rails,test}/**/*", "CHANGELOG", "MIT-LICENSE", "README.rdoc", "Rakefile", "Gemfile", "*.gemspec"]
 
   spec.has_rdoc         = true
   spec.extra_rdoc_files = "README.rdoc", "CHANGELOG"

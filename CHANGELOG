@@ -1,4 +1,9 @@
-2010-11-02 1.1.0
+2010-11-02 version 1.1.1
+
+Fixed missing rails/init.rb.
+
+
+2010-11-02 version 1.1.0
 
 Renamed oauth.resource as oauth.identity to remove confusion, besides, it's
 more often identity than anything else.
@@ -10,6 +15,6 @@ Added Rack::OAuth2::Server::Options class, easier to user than Hash.
 Added indexes for speedier queries.
 
 
-2010-11-02 1.0.0
+2010-11-02 version 1.0.0
 
 World premiere.
