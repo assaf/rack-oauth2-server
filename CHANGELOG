@@ -1,3 +1,8 @@
+2010-11-03 version 1.2.1
+
+Make sure order of scope no longer important for access token lookup.
+
+
 2010-11-02 version 1.2.0
 
 You can now redirect to /oauth/authorize with authorization query parameter and

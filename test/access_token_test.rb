@@ -234,4 +234,28 @@ class AccessTokenTest < Test::Unit::TestCase
       assert !last_response.body.split.include?(@other)
     end
   end
+
+
+  context "get_token_for" do
+    should "return two different tokens for two different clients" do
+      myapp = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "myapp")
+      yourapp = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "yourapp")
+      assert myapp.token != yourapp.token
+    end
+    should "return two different tokens for two different identities" do
+      me = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "myapp")
+      you = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "myapp")
+      assert me.token != you.token
+    end
+    should "return two different tokens for two different scope" do
+      write = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "myapp")
+      math = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read math", "myapp")
+      assert write.token != math.token
+    end
+    should "return same tokens regardless of order of scope" do
+      one = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write math", "myapp")
+      two = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "math write read", "myapp")
+      assert_equal one.token, two.token
+    end
+  end
 end
