@@ -2,7 +2,6 @@ require "rack/oauth2/models"
 require "rack/oauth2/server/errors"
 require "rack/oauth2/server/utils"
 require "rack/oauth2/server/helper"
-require "rack/oauth2/server/version"
 
 
 module Rack
@@ -10,6 +9,9 @@ module Rack
 
     # Implements an OAuth 2 Authorization Server, based on http://tools.ietf.org/html/draft-ietf-oauth-v2-10
     class Server
+
+      # Same as gem version number.
+      VERSION = IO.read(File.expand_path("../../../VERSION", File.dirname(__FILE__)))
 
       class << self
         # Return AuthRequest from authorization request handle.
