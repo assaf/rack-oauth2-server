@@ -17,7 +17,7 @@ module Rack
           # to client ID and scope, we need to know the URL to redirect back to
           # and any state value to pass back in that redirect.
           def create(client_id, scope, redirect_uri, response_type, state)
-            fields = { :client_id=>client_id, :scope=>scope, :redirect_uri=>redirect_uri, :state=>state,
+            fields = { :client_id=>BSON::ObjectId(client_id.to_s), :scope=>scope, :redirect_uri=>redirect_uri, :state=>state,
                        :response_type=>response_type, :created_at=>Time.now.utc, :grant_code=>nil, :authorized_at=>nil, :revoked=>nil }
             fields[:_id] = collection.insert(fields)
             Server.new_instance self, fields

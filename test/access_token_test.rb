@@ -238,23 +238,23 @@ class AccessTokenTest < Test::Unit::TestCase
 
   context "get_token_for" do
     should "return two different tokens for two different clients" do
-      myapp = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "myapp")
-      yourapp = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "yourapp")
+      myapp = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "4cca30423321e895cb000001")
+      yourapp = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "4fff30423321e895cb000001")
       assert myapp.token != yourapp.token
     end
     should "return two different tokens for two different identities" do
-      me = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "myapp")
-      you = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "myapp")
+      me = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "4cca30423321e895cb000001")
+      you = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4cca30423321e895cb000001")
       assert me.token != you.token
     end
     should "return two different tokens for two different scope" do
-      write = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "myapp")
-      math = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read math", "myapp")
+      write = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "4cca30423321e895cb000001")
+      math = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read math", "4cca30423321e895cb000001")
       assert write.token != math.token
     end
     should "return same tokens regardless of order of scope" do
-      one = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write math", "myapp")
-      two = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "math write read", "myapp")
+      one = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write math", "4cca30423321e895cb000001")
+      two = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "math write read", "4cca30423321e895cb000001")
       assert_equal one.token, two.token
     end
   end

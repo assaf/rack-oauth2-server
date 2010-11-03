@@ -13,8 +13,8 @@ module Rack
 
           # Create a new access grant.
           def create(identity, scope, client_id, redirect_uri)
-            fields = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope, :client_id=>client_id, :redirect_uri=>redirect_uri,
-                       :created_at=>Time.now.utc, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
+            fields = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope, :client_id=>BSON::ObjectId(client_id.to_s),
+                       :redirect_uri=>redirect_uri, :created_at=>Time.now.utc, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
             collection.insert fields
             Server.new_instance self, fields
           end
