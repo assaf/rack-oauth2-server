@@ -1,0 +1,36 @@
+<div class="client">
+  <a href="#/new" style="float:left">Add New Client</a>
+  <ul class="badges">
+    <li title="Access tokens granted, lifetime total"><big>${$.thousands(tokens.total)}</big><small>Granted</small></li>
+    <li title="Access tokens granted, last 7 days"><big>${$.thousands(tokens.week)}</big><small>This Week</small></li>
+    <li title="Access tokens revoked, last 7 days"><big>${$.thousands(tokens.revoked)}</big><small>Revoked (Week)</small></li>
+  </ul>
+  <table class="clients">
+    <thead>
+      <th>Application</th>
+      <th>ID/Secret</th>
+      <th>Created</th>
+      <th>Revoked</th>
+    </thead>
+    {{each clients}}
+    <tr class="${revoked ? "revoked" : "active"}">
+      <td class="name">
+        <a href="#/client/${id}">
+          {{if imageUrl}}<img src="${imageUrl}">{{/if}}
+          ${displayName}
+        </a>
+      </td>
+      <td class="secrets">
+        <a href="" rel="toggle">Reveal</a>
+        <dl>
+          <dt>ID</dt><dd>${id}</dd>
+          <dt>Secret</dt><dd>${secret}</dd>
+          <dt>Redirect</dt><dd>${redirect_uri}</dd>
+        </dl>
+      </td>
+      <td class="created">{{html $.shortdate(created)}}</td>
+      <td class="revoke">{{if revoked}}{{html $.shortdate(revoked)}}{{/if}}</td>
+    </tr>
+    {{/each}}
+  </table>
+</div>

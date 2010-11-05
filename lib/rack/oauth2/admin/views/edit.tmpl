@@ -1,0 +1,21 @@
+{{if id}}<form action="#/client/${id}" method="put">
+{{else}}<form action="#/clients" method="post">{{/if}}
+  <label>Display Name
+    <input type="text" name="displayName" value="${displayName}" size="30" autofocus>
+    <p class="hint">This is the application name that users see when asked to authorize.</p>
+  </label>
+  <label>Site URL
+    <input type="text" name="link" value="${link}" size="30">
+    <p class="hint">This is a link to the application's site.</p>
+  </label>
+  <label>Image URL
+    <input type="text" name="imageUrl" value="${imageUrl}" size="30">
+    <p class="hint">This is a link to the application's icon (48x48).</p>
+  </label>
+  <label>Redirect URI
+    <input type="text" name="redirectUri" value="${redirectUri}" size="30">
+    <p class="hint">Users redirected back to this URL on successful authorization.</p>
+  </label>
+  {{if id}}<button>Save Changes</button>
+  {{else}}<button>Create Client</button>{{/if}}
+</form>

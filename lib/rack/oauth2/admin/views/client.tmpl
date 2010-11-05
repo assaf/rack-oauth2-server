@@ -1,0 +1,48 @@
+<div class="client">
+  <div class="details">
+    <a href="${link}" class="name">{{if imageUrl}}<img src="${imageUrl}">{{/if}} ${displayName}</a>
+    <a href="#/client/${id}/edit" rel="edit">Edit</a>
+    {{if !revoked}}
+      <a href="${revoke}" data-method="post" data-confirm="There is no undo. Are you really really sure?" rel="revoke">Revoke</a>
+    {{/if}}
+    <div class="meta">
+      Created {{html $.shortdate(revoked)}}
+      {{if revoked}}Revoked {{html $.shortdate(revoked)}}{{/if}}
+    </div>
+  </div>
+  <ul class="badges">
+    <li title="Access tokens granted, lifetime total"><big>${$.thousands(tokens.total)}</big><small>Granted</small></li>
+    <li title="Access tokens granted, last 7 days"><big>${$.thousands(tokens.week)}</big><small>This Week</small></li>
+    <li title="Access tokens revoked, last 7 days"><big>${$.thousands(tokens.revoked)}</big><small>Revoked (Week)</small></li>
+  </ul>
+  <table class="tokens">
+    <thead>
+      <th>Token</th>
+      <th>Identity</th>
+      <th>Scope</th>
+      <th>Created</th>
+      <th>Revoked</th>
+    </thead>
+    <tbody>
+      {{each tokens.list}}
+      <tr>
+        <td class="token">${token}</td>
+        <td class="identity">${identity}</td>
+        <td class="scope">${scope}</td>
+        <td class="created">{{html $.shortdate(created)}}</td>
+        <td class="revoke">
+          {{if revoked}}
+            {{html $.shortdate(revoked)}}
+          {{else}}
+            <a href="${revoke}" data-method="post" data-confirm="Are you sure?" rel="revoke">Revoke</a>
+          {{/if}}
+        </td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+  <div class="pagination">
+    {{if tokens.previous}}<a href="#${tokens.previous}" rel="previous">Previous</a>{{/if}}
+    {{if tokens.next}}<a href="#${tokens.next}" rel="next">Next</a>{{/if}}
+  </div>
+</div>

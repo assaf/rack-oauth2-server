@@ -1,0 +1,214 @@
+body {
+  margin: 0;
+  width: 100%;
+  font: 12pt "Helvetica", "Lucida Sans", "Verdana";
+}
+
+a { text-decoration: none; color: #00c; }
+a:hover, a:focus { text-decoration: underline; color: #00c; }
+h1, h2 {
+  text-shadow: rgba(255,255,255,.2) 0 1px 1px;
+  color: rgb(76, 86, 108);
+}
+h1 { font-size: 18pt; margin: 0.6em 0 }
+h2 { font-size: 16pt; margin: 0.3em 0 }
+
+label {
+  display: block;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.9em;
+  margin: 0.9em 0;
+}
+label input, label textarea, label select { display: block }
+label input, label textarea {
+  font-size: 12pt;
+  line-height: 1.3em;
+}
+label .hint {
+  font-weight: normal;
+  color: #666;
+  margin: 0;
+}
+button {
+  font-size: 11pt;
+  text-shadow: 0 -1px 1px rgba(0,0,0,0.25);
+  border: 1px solid #dddddd;
+  background: #f6f6f6 50% 50% repeat-x;
+  font-weight: bold;
+  color: #0073ea;
+  outline: none;
+  line-height: 1.3em;
+  vertical-align: bottom;
+  padding: 2px 8px;
+	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(226,226,226,0.0)), to(rgba(226,226,226,1.0)));
+  -webkit-border-radius: 4px; -moz-border-radius: 4px;
+	-moz-box-shadow: 0 0 4px rgba(0,0,0,0.0);
+	-webkit-box-shadow: 0 0 4px rgba(0,0,0,0.0);
+}
+button:hover, button:focus {
+	text-shadow: 0 -1px 1px rgba(255,255,255,0.25);
+  border: 1px solid #0073ea;
+  background: #0073ea 50% 50% repeat-x;
+  background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 115, 234, 0.5)), to(rgba(0,115,234, 1.0)));
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+	-moz-box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+	-webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 115, 234, 1.0)), to(rgba(0,115,234, 0.5))); position: relative; top: 1px }
+
+
+#notice {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  line-height: 1.6em;
+  background: #ffd;
+  color: #000;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+  z-index: 99;
+}
+
+#header {
+  margin: 0 2em;
+}
+#header .title {
+  font-size: 1.4em;
+  font-weight: bold;
+  color: #000;
+  text-decoration: none;
+  margin: 0.6em 0;
+  display: block;
+  text-align: right;
+}
+
+#main {
+  margin: 0 2em;
+}
+
+table {
+  width: 100%;
+  table-layout: auto;
+  empty-cells: show;
+  border-collapse: separate;
+  border-spacing: 4px;
+}
+table th {
+  text-align: left;
+  border-bottom: 1px solid #ccc;
+  margin-right: 48px;
+}
+table td {
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #ddf;
+}
+table td.created, table td.revoke {
+  width: 6em;
+}
+table tr.revoked td, table tr.revoked a {
+  color: #888;
+}
+table button {
+  margin-top: -2px;
+  font-size: 10pt;
+}
+
+table.clients td.name {
+  padding-left: 32px;
+  line-height: 24px;
+}
+table.clients td.name img {
+  width: 24px;
+  height: 24px;
+  border: none;
+  margin: -0px 4px -2px -32px;
+}
+table.clients td.secrets {
+  width: 28em;
+}
+table.clients td.secrets dl {
+  display: none;
+  width: 40em;
+  margin-right: -12em;
+}
+table.clients td.secrets dt {
+  width: 4em;
+  float: left;
+  color: #888;
+  margin-bottom: 0.3em;
+}
+table.clients td.secrets dd:after {
+  content: ".";
+  display: block;
+  clear: both;
+  visibility: hidden;
+  line-height: 0;
+  height: 0;
+}
+
+table.tokens td.token {
+  width: 32em;
+}
+table.tokens td.scope {
+}
+
+.pagination {
+  width: 100%;
+  margin-top: 2em;
+}
+.pagination a[rel=next] {
+  float: right;
+}
+.pagination a[rel=previous] {
+  float: left;
+}
+
+.badges {
+  list-style: none;
+  margin: 1.1em 0;
+  padding: 0;
+  text-align: right;
+  width: 100%;
+}
+.badges li {
+  display: inline-block;
+  margin-left: 8px;
+  min-width: 8em;
+}
+.badges  big {
+  font-size: 22pt;
+  display: block;
+  text-align: center;
+}
+.badges small {
+  font-size: 11pt;
+  display: block;
+  text-align: center;
+}
+
+.client .details {
+  float: left;
+}
+.client .details .name {
+  line-height: 24px;
+  font-size: 15pt;
+  font-weight: bold;
+}
+.client .details img {
+  border: none;
+  width: 32px;
+  height: 32px;
+  vertical-align: bottom;
+}
+.client .details a[rel=edit] {
+  margin: 0 0.3em 0 1em;
+}
+.client .details .meta {
+  color: #888;
+  font-size: 10pt;
+}

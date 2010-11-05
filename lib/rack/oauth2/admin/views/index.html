@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OAuth Console</title>
+    <link href="/oauth/admin/css/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+    <script src="/oauth/admin/js/jquery.js" type="text/javascript"></script>
+    <script src="/oauth/admin/js/jquery.tmpl.js" type="text/javascript"></script>
+    <script src="/oauth/admin/js/sammy.js" type="text/javascript"></script>
+    <script src="/oauth/admin/js/sammy.tmpl.js" type="text/javascript"></script>
+    <script src="/oauth/admin/js/sammy.json.js" type="text/javascript"></script>
+    <script src="/oauth/admin/js/sammy.storage.js" type="text/javascript"></script>
+    <script src="/oauth/admin/js/sammy.title.js" type="text/javascript"></script>
+    <script src="/oauth/admin/js/underscore.js" type="text/javascript"></script>
+    <script src="/oauth/admin/js/application.js" type="text/javascript"></script>
+  </head>
+  <body>
+    <div id="notice" style="display:none"></div>
+    <div id="header"><a href="#/" class="title">OAuth Console</a></div>
+    <div id="main">
+    </div>
+    <script>
+      $(function() { Sammy("#main").run("#/"); });
+    </script>
+  </body>
+</html>

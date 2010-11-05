@@ -79,6 +79,12 @@ module Rack
           AccessToken.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
         end
 
+        def update(args)
+          fields = [:display_name, :link, :image_url].inject({}) { |h,k| v = args[k]; h[k] = v if v; h }
+          fields[:redirect_uri] = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
+          self.class.collection.update({ :_id=>id }, { :$set=>fields })
+        end
+
         Server.create_indexes do
           # For quickly returning clients sorted by display name, or finding
           # client from a URL.
