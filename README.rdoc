@@ -72,6 +72,7 @@ The configuration options are:
 - +:authorize_path+ --  Path for requesting end-user authorization. By
   convention defaults to +/oauth/authorize+.
 - +:database+ -- +Mongo::DB+ instance.
+- +:host+ -- Only check requests sent to this host.
 - +:realm+ -- Authorization realm that will show up in 401 responses. Defaults
   to use the request host name.
 - +:scopes+ -- Array listing all supported scopes, e.g. ["read", "write"].
@@ -113,6 +114,11 @@ In Rails, the entire flow would look something like this:
 
   class OauthController < ApplicationController
     def authorize
+      if current_user
+        render :action=>"authorize"
+      else
+        redirect_to :action=>"login", :authorization=>oauth.authorization
+      end
     end
 
     def grant
@@ -132,7 +138,11 @@ method.
 In Sinatra/Padrino, it would look something like this:
 
   get "/oauth/authorize" do
-    render "oauth/authorize"
+    if current_user
+      render "oauth/authorize"
+    else
+      redirect "/oauth/login?authorization=#{oauth.authorization}"
+    end
   end
 
   post "/oauth/grant" do

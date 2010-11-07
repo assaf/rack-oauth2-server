@@ -258,4 +258,23 @@ class AccessTokenTest < Test::Unit::TestCase
       assert_equal one.token, two.token
     end
   end
+
+  context "with specific host" do
+    context "right host" do
+      setup do
+        get "http://example.org/public"
+      end
+      # Right host, but not authenticated
+      should_return_resource "HAI"
+    end
+
+    context "wrong host" do
+      setup do
+        with_token
+        get "http://wrong.org/public"
+      end
+      # Wrong host, not checking credentials
+      should_return_resource "HAI"
+    end
+  end
 end

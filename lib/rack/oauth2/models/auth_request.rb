@@ -18,7 +18,8 @@ module Rack
           # and any state value to pass back in that redirect.
           def create(client_id, scope, redirect_uri, response_type, state)
             fields = { :client_id=>BSON::ObjectId(client_id.to_s), :scope=>scope, :redirect_uri=>redirect_uri, :state=>state,
-                       :response_type=>response_type, :created_at=>Time.now.utc, :grant_code=>nil, :authorized_at=>nil, :revoked=>nil }
+                       :response_type=>response_type, :created_at=>Time.now.utc.to_i, :grant_code=>nil,
+                       :authorized_at=>nil, :revoked=>nil }
             fields[:_id] = collection.insert(fields)
             Server.new_instance self, fields
           end
@@ -56,7 +57,7 @@ module Rack
         def grant!(identity)
           raise ArgumentError, "Must supply a identity" unless identity
           return if revoked
-          self.authorized_at = Time.now.utc
+          self.authorized_at = Time.now.utc.to_i
           if response_type == "code" # Requested authorization code
             access_grant = AccessGrant.create(identity, scope, client_id, redirect_uri)
             self.grant_code = access_grant.code
@@ -71,7 +72,7 @@ module Rack
 
         # Deny access.
         def deny!
-          self.authorized_at = Time.now.utc
+          self.authorized_at = Time.now.utc.to_i
           self.class.collection.update({ :_id=>id }, { :$set=>{ :authorized_at=>authorized_at } })
         end
 

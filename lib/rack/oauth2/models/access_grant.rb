@@ -13,8 +13,9 @@ module Rack
 
           # Create a new access grant.
           def create(identity, scope, client_id, redirect_uri)
-            fields = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope, :client_id=>BSON::ObjectId(client_id.to_s),
-                       :redirect_uri=>redirect_uri, :created_at=>Time.now.utc, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
+            fields = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope,
+                       :client_id=>BSON::ObjectId(client_id.to_s), :redirect_uri=>redirect_uri,
+                       :created_at=>Time.now.utc.to_i, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
             collection.insert fields
             Server.new_instance self, fields
           end
@@ -54,7 +55,7 @@ module Rack
           raise InvalidGrantError if self.access_token || self.revoked
           access_token = AccessToken.get_token_for(identity, scope, client_id)
           self.access_token = access_token.token
-          self.granted_at = Time.now.utc
+          self.granted_at = Time.now.utc.to_i
           self.class.collection.update({ :_id=>code, :access_token=>nil, :revoked=>nil }, { :$set=>{ :granted_at=>granted_at, :access_token=>access_token.token } }, :safe=>true)
           reload = self.class.collection.find_one({ :_id=>code, :revoked=>nil }, { :fields=>%w{access_token} })
           raise InvalidGrantError unless reload && reload["access_token"] == access_token.token
@@ -62,7 +63,8 @@ module Rack
         end
 
         def revoke!
-          self.class.collection.update({ :_id=>code, :revoked=>nil }, { :$set=>{ :revoked=>Time.now.utc } })
+          self.revoked = Time.now.utc.to_i
+          self.class.collection.update({ :_id=>code, :revoked=>nil }, { :$set=>{ :revoked=>revoked } })
         end
 
         Server.create_indexes do

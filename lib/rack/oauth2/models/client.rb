@@ -25,7 +25,8 @@ module Rack
           def create(args)
             redirect_uri = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
             fields =  { :secret=>Server.secure_random, :display_name=>args[:display_name], :link=>args[:link],
-                        :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :created_at=>Time.now.utc, :revoked=>nil }
+                        :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :created_at=>Time.now.utc.to_i,
+                        :revoked=>nil }
             fields[:_id] = collection.insert(fields)
             Server.new_instance self, fields
           end
@@ -36,6 +37,12 @@ module Rack
             Server.new_instance self, collection.find_one(id)
           rescue BSON::InvalidObjectId
             Server.new_instance self, collection.find_one({ :display_name=>field }) || collection.find_one({ :link=>field })
+          end
+
+          # Returns all the clients in the database, sorted alphabetically.
+          def all
+            collection.find({}, { :sort=>[[:display_name, Mongo::ASCENDING]] }).
+              map { |fields| Server.new_instance self, fields }
           end
 
           def collection
@@ -65,7 +72,7 @@ module Rack
         # Revoke all authorization requests, access grants and access tokens for
         # this client. Ward off the evil.
         def revoke!
-          self.revoked = Time.now.utc
+          self.revoked = Time.now.utc.to_i
           Client.collection.update({ :_id=>id }, { :$set=>{ :revoked=>revoked } })
           AuthRequest.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
           AccessGrant.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
