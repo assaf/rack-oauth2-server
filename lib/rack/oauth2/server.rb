@@ -49,6 +49,7 @@ module Rack
       #   convention defaults to /oauth/authorize.
       # - :database -- Mongo::DB instance.
       # - :host -- Only check requests sent to this host.
+      # - :path -- Only check requests for resources under this path.
       # - :param_authentication -- If true, supports authentication using
       #   query/form parameters.
       # - :realm -- Authorization realm that will show up in 401 responses.
@@ -67,7 +68,6 @@ module Rack
         @options.authorize_path ||= "/oauth/authorize"
         @options.authorization_types ||=  %w{code token}
         @options.param_authentication = false
-        @options.path ||= "/"
       end
 
       # @see Options
@@ -76,7 +76,7 @@ module Rack
       def call(env)
         request = OAuthRequest.new(env)
         return @app.call(env) if options.host && options.host != request.host
-        return @app.call(env) unless request.path.index(options.path) == 0
+        return @app.call(env) if options.path && request.path.index(options.path) != 0
 
         begin
           # Use options.database if specified.

@@ -310,4 +310,23 @@ class AccessTokenTest < Test::Unit::TestCase
       should_return_resource "HAI"
     end
   end
+
+
+  context "with specific path" do
+    setup { config.path = "/private" }
+
+    context "outside path" do
+      setup { with_token ; get "http://example.org/public" }
+      # Not authenticated
+      should_return_resource "HAI"
+    end
+
+    context "inside path" do
+      setup { with_token ; get "http://example.org/private" }
+      # Authenticated
+      should_return_resource "Shhhh"
+    end
+
+    teardown { config.path = nil }
+  end
 end

@@ -2,14 +2,14 @@
 
 Added OAuth authorization console.
 
-Added param_authentication option. Turn this on if you need to support
+Added param_authentication option: turn this on if you need to support
 oauth_token query parameter or form field. Disabled by default.
-
-
-2010-11-07 version 1.2.3
 
 Added host option: only check requests sent to that host (e.g. only check
 requests to api.example.com).
+
+Added path option: only check requests under this path (e.g. only check
+requests for /api/...).
 
 
 2010-11-03 version 1.2.2

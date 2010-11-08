@@ -73,6 +73,7 @@ The configuration options are:
   convention defaults to +/oauth/authorize+.
 - +:database+ -- +Mongo::DB+ instance.
 - +:host+ -- Only check requests sent to this host.
+- +:path+ -- Only check requests for resources under this path.
 - +:param_authentication+ -- If true, supports authentication using query/form
   parameters.
 - +:realm+ -- Authorization realm that will show up in 401 responses. Defaults
