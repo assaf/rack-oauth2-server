@@ -139,7 +139,7 @@ module Rack
           client = Server::Client.find(params[:id])
           json = client_as_json(client, true)
 
-          page = (params[:page] || 1).to_i
+          page = [params[:page].to_i, 1].max
           offset = (page - 1) * settings.tokens_per_page
           total = Server::AccessToken.count(:client_id=>client.id)
           tokens = Server::AccessToken.for_client(params[:id], offset, settings.tokens_per_page)
@@ -181,17 +181,17 @@ module Rack
           def validate_params(params)
             display_name = params[:displayName].to_s.strip
             halt 400, "Missing display name" if display_name.empty?
-            link = URI.parse(params[:link]).normalize rescue nil
+            link = URI.parse(params[:link].to_s.strip).normalize rescue nil
             halt 400, "Link is not a URL (must be http://....)" unless link
             halt 400, "Link must be an absolute URL with HTTP/S scheme" unless link.absolute? && %{http https}.include?(link.scheme)
-            redirect_uri = URI.parse(params[:redirectUri]).normalize rescue nil
+            redirect_uri = URI.parse(params[:redirectUri].to_s.strip).normalize rescue nil
             halt 400, "Redirect URL is not a URL (must be http://....)" unless redirect_uri
             halt 400, "Redirect URL must be an absolute URL with HTTP/S scheme" unless
               redirect_uri.absolute? && %{http https}.include?(redirect_uri.scheme)
-            image_url = URI.parse(params[:imageUrl]).normalize rescue nil
-            halt 400, "Image URL is not a URL (must be http://....)" unless image_url
-            halt 400, "Image URL must be an absolute URL with HTTP/S scheme" unless
-              image_url.absolute? && %{http https}.include?(image_url.scheme)
+            if image_url = URI.parse(params[:imageUrl].to_s.strip).normalize rescue nil
+              halt 400, "Image URL must be an absolute URL with HTTP/S scheme" unless
+                image_url.absolute? && %{http https}.include?(image_url.scheme)
+            end
             { :display_name=>display_name, :link=>link.to_s, :image_url=>image_url.to_s, :redirect_uri=>redirect_uri.to_s }
           end
 

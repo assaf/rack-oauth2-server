@@ -21,11 +21,37 @@
   {{else}}<button>Create Client</button>{{/if}}
 </form>
 <script type="text/javascript">
-  $("input[name=imageUrl]").change(function() {
-    var url = $(this).val();
-    if (url.match(/https?:/i))
-      $("#image").attr("src", url).show();
-    else
-      $("#image").hide();
-  }).trigger("change");
+  $(function() {
+    var image = $("#image");
+    image.load(function() {
+      image.show().removeClass("loading");
+    }).error(function() {
+      if (image.attr("src"))
+        image.removeClass("loading");
+    });
+
+    var imageUrl = $("input[name=imageUrl]");
+    imageUrl.change(function() {
+      var url = $(this).val().trim();
+      if (url == "") {
+        image.hide();
+      } else {
+        image.attr("src", "admin/images/loading.gif").show().addClass("loading");
+        setTimeout(function() { image.attr("src", url); }, 10);
+      }
+    }).trigger("change");
+
+    $("input[name=link]").change(function() {
+      if (imageUrl.val().trim() == "") {
+        $("#image").show().addClass("loading").attr("src", null);
+        var image = new Image();
+        image.src = $(this).val().trim().replace(/^(https?:\/\/)(.+?)(\/.*|$)/, "$1$2/favicon.ico");
+        image.onload = function() {
+          if (imageUrl.val().trim() == "") {
+            imageUrl.val(image.src).trigger("change");
+          } 
+        }
+      }
+    });
+  })
 </script>

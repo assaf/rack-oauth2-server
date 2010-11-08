@@ -60,6 +60,7 @@ button:hover, button:focus {
 button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 115, 234, 1.0)), to(rgba(0,115,234, 0.5))); position: relative; top: 1px }
 
 
+/* Message dropping down from the top */
 #notice {
   position: absolute;
   top: 0;
@@ -107,6 +108,11 @@ table td {
   vertical-align: top;
   border-bottom: 1px solid #ddf;
   line-height: 32px;
+  margin: 0;
+  padding: 0;
+}
+table tr:hover td {
+  background: #ddf;
 }
 table td.created, table td.revoke {
   width: 6em;
@@ -221,10 +227,7 @@ table.tokens td.scope {
 .client.new>*, .client.edit>* {
   margin-left: 60px;
 }
-td {
-  margin: 0;
-  padding: 0;
-}
-tr:hover td {
-  background: #ddf;
+
+.loading {
+  background: url("../images/loading.gif") no-repeat 50% 50%;
 }

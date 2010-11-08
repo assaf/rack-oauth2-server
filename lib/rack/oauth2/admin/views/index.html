@@ -16,9 +16,10 @@
   <body>
     <div id="notice" style="display:none"></div>
     <div id="header"><a href="#/" class="title">OAuth Console</a></div>
-    <div id="main">
-    </div>
+    <div id="main"></div>
     <script>
+      var loading = new Image();
+      loading.src = "admin/images/loading.gif";
       $(function() { Sammy("#main").run("#/"); });
     </script>
   </body>
