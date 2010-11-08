@@ -1,5 +1,6 @@
-{{if id}}<form action="#/client/${id}" method="put">
-{{else}}<form action="#/clients" method="post">{{/if}}
+{{if id}}<form action="#/client/${id}" method="put" class="client edit">
+{{else}}<form action="#/clients" method="post" class="client new">{{/if}}
+  <img id="image">
   <label>Display Name
     <input type="text" name="displayName" value="${displayName}" size="30" autofocus>
     <p class="hint">This is the application name that users see when asked to authorize.</p>
@@ -19,3 +20,12 @@
   {{if id}}<button>Save Changes</button>
   {{else}}<button>Create Client</button>{{/if}}
 </form>
+<script type="text/javascript">
+  $("input[name=imageUrl]").change(function() {
+    var url = $(this).val();
+    if (url.match(/https?:/i))
+      $("#image").attr("src", url).show();
+    else
+      $("#image").hide();
+  }).trigger("change");
+</script>

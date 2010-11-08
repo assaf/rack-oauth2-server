@@ -3,10 +3,12 @@ Bundler.setup
 require "test/unit"
 require "rack/test"
 require "shoulda"
+require "timecop"
 require "ap"
 require "json"
 $: << File.dirname(__FILE__) + "/../lib"
 require "rack/oauth2/server"
+require "rack/oauth2/server/admin"
 
 
 ENV["RACK_ENV"] = "test"
@@ -23,7 +25,14 @@ when "sinatra", nil
   
   class Test::Unit::TestCase
     def app
-      MyApp.new
+      Rack::Builder.new do
+        map("/oauth/admin") { run Rack::OAuth2::Server::Admin }
+        map("/") { run MyApp }
+      end
+    end
+
+    def config
+      MyApp.oauth
     end
   end
 
@@ -45,6 +54,13 @@ when "rails2"
   class Test::Unit::TestCase
     def app
       ActionController::Dispatcher.new
+    end
+
+    def admin!
+    end
+
+    def config
+      Rails.configuration.oauth
     end
   end
 

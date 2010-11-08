@@ -42,10 +42,10 @@ module Rack
           before path do
             if oauth.authenticated?
               if scope && !oauth.scope.include?(scope)
-                oauth.no_scope! scope
+                halt oauth.no_scope! scope
               end
             else
-              oauth.no_access!
+              halt oauth.no_access!
             end
           end
         end

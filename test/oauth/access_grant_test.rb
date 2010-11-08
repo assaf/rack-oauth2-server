@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/setup"
+require "test/setup"
 
 
 # 4.  Obtaining an Access Token

@@ -49,13 +49,15 @@ module Rack
       #   convention defaults to /oauth/authorize.
       # - :database -- Mongo::DB instance.
       # - :host -- Only check requests sent to this host.
+      # - :param_authentication -- If true, supports authentication using
+      #   query/form parameters.
       # - :realm -- Authorization realm that will show up in 401 responses.
       #   Defaults to use the request host name.
       # - :scopes -- Array listing all supported scopes, e.g. %w{read write}.
       # - :logger -- The logger to use. Under Rails, defaults to use the Rails
       #   logger.  Will use Rack::Logger if available.
       Options = Struct.new(:access_token_path, :authenticator, :authorization_types,
-        :authorize_path, :database, :host, :realm, :scopes, :logger)
+        :authorize_path, :database, :host, :param_authentication, :path, :realm, :scopes, :logger)
 
       def initialize(app, options = Options.new, &authenticator)
         @app = app
@@ -64,6 +66,8 @@ module Rack
         @options.access_token_path ||= "/oauth/access_token"
         @options.authorize_path ||= "/oauth/authorize"
         @options.authorization_types ||=  %w{code token}
+        @options.param_authentication = false
+        @options.path ||= "/"
       end
 
       # @see Options
@@ -72,6 +76,7 @@ module Rack
       def call(env)
         request = OAuthRequest.new(env)
         return @app.call(env) if options.host && options.host != request.host
+        return @app.call(env) unless request.path.index(options.path) == 0
 
         begin
           # Use options.database if specified.
@@ -88,7 +93,7 @@ module Rack
           if request.authorization
             # 5.1.1.  The Authorization Request Header Field
             token = request.credentials if request.oauth?
-          elsif !request.GET["oauth_verifier"] # Ignore OAuth 1.0 callbacks
+          elsif options.param_authentication && !request.GET["oauth_verifier"] # Ignore OAuth 1.0 callbacks
             # 5.1.2.  URI Query Parameter
             # 5.1.3.  Form-Encoded Body Parameter
             token = request.GET["oauth_token"] || request.POST["oauth_token"]
@@ -118,13 +123,14 @@ module Rack
               scope = response[1]["oauth.no_scope"] || ""
               scope = scope.join(" ") if scope.respond_to?(:join)
               challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scope]
-              return [403, { "WWW-Authenticate"=>challenge }, []]
+              response[1]["WWW-Authenticate"] = challenge
+              return response
             else
               return response
             end
           else
             response = @app.call(env)
-            if response[1] && response[1]["oauth.no_access"]
+            if response[1] && response[1].delete("oauth.no_access")
               # OAuth access required.
               return unauthorized(request)
             elsif response[1] && response[1]["oauth.authorization"]

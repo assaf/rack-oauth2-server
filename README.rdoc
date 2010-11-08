@@ -73,6 +73,8 @@ The configuration options are:
   convention defaults to +/oauth/authorize+.
 - +:database+ -- +Mongo::DB+ instance.
 - +:host+ -- Only check requests sent to this host.
+- +:param_authentication+ -- If true, supports authentication using query/form
+  parameters.
 - +:realm+ -- Authorization realm that will show up in 401 responses. Defaults
   to use the request host name.
 - +:scopes+ -- Array listing all supported scopes, e.g. ["read", "write"].
@@ -169,13 +171,19 @@ The view would look something like this:
 
 == Step 4: Protect Your Path
 
-Rack::OAuth2::Server intercepts all incoming requests and looks for either
-OAuth authentication header, or +oauth_token+ parameter. If it finds either
-one, and the access token is still valid, it sets the request header
-+oauth.identity+ to the value you supplied during authorization (step 3).
+Rack::OAuth2::Server intercepts all incoming requests and looks for an
+Authorization header that uses OAuth authentication scheme, like so:
 
-You can use +oauth.identity+ to resolve the access token back to user, account
-or whatever you put there.
+  Authorization: OAuth e57807eb99f8c29f60a27a75a80fec6e
+
+It can also support the +oauth_token+ query parameter or form field, if you set
++param_authentication+ to true. This option is off by default to prevent
+conflict with OAuth 1.0 callback.
+
+If Rack::OAuth2::Server finder a valid access token in the request, it sets the
+request header +oauth.identity+ to the value you supplied during authorization
+(step 3). You can use +oauth.identity+ to resolve the access token back to
+user, account or whatever you put there.
 
 If the access token is invalid or revoked, it returns 401 (Unauthorized) to the
 client. However, if there's no access token, the request goes through. You

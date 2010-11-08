@@ -15,5 +15,6 @@ group :test do
   gem "rails", "~>2.3"
   gem "shoulda"
   gem "sinatra"
+  gem "therubyracer", "~>0.8.0.pre"
   gem "timecop"
 end

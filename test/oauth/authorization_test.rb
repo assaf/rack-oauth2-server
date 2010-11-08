@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/setup"
+require "test/setup"
 
 
 # 3.  Obtaining End-User Authorization

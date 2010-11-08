@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/setup"
+require "test/setup"
 
 
 # 5.  Accessing a Protected Resource
@@ -121,14 +121,29 @@ class AccessTokenTest < Test::Unit::TestCase
     # 5.1.2.  URI Query Parameter
     
     context "query parameter" do
-      context "valid token" do
+      context "default mode" do
         setup { get "/private?oauth_token=#{@token}" }
-        should_return_resource "Shhhh"
+        should_fail_authentication
       end
 
-      context "invalid token" do
-        setup { get "/private?oauth_token=dingdong" }
-        should_fail_authentication :invalid_token
+      context "enabled" do
+        setup do
+          config.param_authentication = true
+        end
+
+        context "valid token" do
+          setup { get "/private?oauth_token=#{@token}" }
+          should_return_resource "Shhhh"
+        end
+
+        context "invalid token" do
+          setup { get "/private?oauth_token=dingdong" }
+          should_fail_authentication :invalid_token
+        end
+        
+        teardown do
+          config.param_authentication = false
+        end
       end
     end
   end
@@ -161,14 +176,29 @@ class AccessTokenTest < Test::Unit::TestCase
     # 5.1.3.  Form-Encoded Body Parameter
 
     context "body parameter" do
-      context "valid token" do
+      context "default mode" do
         setup { post "/change", :oauth_token=>@token }
-        should_return_resource "Woot!"
+        should_fail_authentication
       end
 
-      context "invalid token" do
-        setup { post "/change", :oauth_token=>"dingdong" }
-        should_fail_authentication :invalid_token
+      context "enabled" do
+        setup do
+          config.param_authentication = true
+        end
+
+        context "valid token" do
+          setup { post "/change", :oauth_token=>@token }
+          should_return_resource "Woot!"
+        end
+
+        context "invalid token" do
+          setup { post "/change", :oauth_token=>"dingdong" }
+          should_fail_authentication :invalid_token
+        end
+
+        teardown do
+          config.param_authentication = false
+        end
       end
     end
   end
@@ -176,7 +206,10 @@ class AccessTokenTest < Test::Unit::TestCase
 
   context "insufficient scope" do
     context "valid token" do
-      setup { get "/calc?oauth_token=#@token" }
+      setup do
+        with_token
+        get "/calc"
+      end
 
       should "respond with status 403 (Forbidden)" do
         assert_equal 403, last_response.status

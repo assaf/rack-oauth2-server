@@ -42,7 +42,7 @@
     </tbody>
   </table>
   <div class="pagination">
-    {{if tokens.previous}}<a href="#${tokens.previous}" rel="previous">Previous</a>{{/if}}
-    {{if tokens.next}}<a href="#${tokens.next}" rel="next">Next</a>{{/if}}
+    {{if tokens.previous}}<a href="#/client/${id}/${tokens.page - 1}" rel="previous">Previous</a>{{/if}}
+    {{if tokens.next}}<a href="#/client/${id}/${tokens.page + 1}" rel="next">Next</a>{{/if}}
   </div>
 </div>

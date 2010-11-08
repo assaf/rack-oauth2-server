@@ -66,7 +66,7 @@ module Rack
         #
         # @return 401
         def no_access!
-          @response["oauth.no_access"] = true
+          @response["oauth.no_access"] = "true"
           @response.status = 401
         end
         
@@ -77,7 +77,7 @@ module Rack
         # @param [String] scope The missing scope, e.g. "read"
         # @return 403
         def no_scope!(scope)
-          @response["oauth.no_scope"] = scope
+          @response["oauth.no_scope"] = scope.to_s
           @response.status = 403
         end
 
@@ -106,7 +106,7 @@ module Rack
         # @param [String] identity Identity string
         # @return 200
         def grant!(authorization, identity)
-          @response["oauth.authorization"] = authorization
+          @response["oauth.authorization"] = authorization.to_s
           @response["oauth.identity"] = identity.to_s
           @response.status = 200
         end
@@ -118,7 +118,7 @@ module Rack
         # @param [String] authorization Authorization handle
         # @return 401
         def deny!(authorization)
-          @response["oauth.authorization"] = authorization
+          @response["oauth.authorization"] = authorization.to_s
           @response.status = 401
         end
 
