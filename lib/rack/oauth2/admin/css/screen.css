@@ -1,5 +1,9 @@
+html {
+  background: #eee;
+}
 body {
   margin: 0;
+  padding: 0;
   width: 100%;
   font: 12pt "Helvetica", "Lucida Sans", "Verdana";
 }
@@ -75,20 +79,41 @@ button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0
 }
 
 #header {
-  margin: 0 2em;
+  margin: 0;
+  padding: 2em;
+  background: #fff;
+  background: -webkit-gradient(linear, left top, left bottom, from(#ccf), to(#fff));
+  background: -moz-linear-gradient(top,  #ccf,  #fff);
 }
 #header .title {
-  font-size: 1.4em;
+  font-size: 18pt;
   font-weight: bold;
-  color: #000;
-  text-decoration: none;
-  margin: 0.6em 0;
   display: block;
   text-align: right;
+  line-height: 32px;
+}
+#header .title a {
+  color: #000;
+  text-decoration: none;
+}
+#header .title img {
+  width: 32px;
+  height: 32px;
+  vertical-align: bottom;
 }
 
 #main {
-  margin: 0 2em;
+  padding: 0 2em 4em 2em;
+  background: #fff;
+}
+#footer {
+  background: #eee;
+  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#eee));
+  background: -moz-linear-gradient(top,  #fff,  #eee);
+  color: #666;
+  border-top: 1px solid transparent;
+  font-size: 90%;
+  padding: 0 2em 2em 2em;
 }
 
 table {
@@ -97,6 +122,7 @@ table {
   empty-cells: show;
   border-collapse: separate;
   border-spacing: 0px;
+  margin-top: 2em;
 }
 table th {
   text-align: left;
@@ -177,7 +203,7 @@ table.tokens td.scope {
 
 .badges {
   list-style: none;
-  margin: 1.1em 0;
+  margin:  0;
   padding: 0;
   text-align: right;
   width: 100%;
@@ -217,6 +243,12 @@ table.tokens td.scope {
 .client .details .meta {
   color: #888;
   font-size: 10pt;
+}
+
+.client.new, .client.edit {
+  margin: 0;
+  padding: 1em;
+  border: 1px solid #eee;
 }
 .client.new>#image, .client.edit>#image {
   float: left;

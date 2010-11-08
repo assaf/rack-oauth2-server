@@ -45,6 +45,15 @@ module Rack
               map { |fields| Server.new_instance self, fields }
           end
 
+          # Deletes client with given identifier (also, all related records).
+          def delete(client_id)
+            id = BSON::ObjectId(client_id.to_s)
+            Client.collection.remove({ :_id=>id })
+            AuthRequest.collection.remove({ :client_id=>id })
+            AccessGrant.collection.remove({ :client_id=>id })
+            AccessToken.collection.remove({ :client_id=>id })
+          end
+
           def collection
             Server.database["oauth2.clients"]
           end

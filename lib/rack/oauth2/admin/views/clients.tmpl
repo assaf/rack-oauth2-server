@@ -17,7 +17,7 @@
       <td class="name">
         <a href="#/client/${id}">
           {{if imageUrl}}<img src="${imageUrl}">{{/if}}
-          ${displayName}
+          ${displayName || "untitled"}
         </a>
       </td>
       <td class="secrets">
@@ -34,3 +34,16 @@
     {{/each}}
   </table>
 </div>
+<script type="text/javascript">
+  $("td.secrets a[rel=toggle]").click(function(evt) {
+    evt.preventDefault();
+    var dl = $(this).next("dl");
+    if (dl.is(":visible")) {
+      $(this).html("Reveal");
+      dl.hide();
+    } else {
+      $(this).html("Hide");
+      dl.show();
+    }
+  });
+</script>

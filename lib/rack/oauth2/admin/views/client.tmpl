@@ -3,8 +3,9 @@
     <a href="${link}" class="name">{{if imageUrl}}<img src="${imageUrl}">{{/if}} ${displayName}</a>
     <a href="#/client/${id}/edit" rel="edit">Edit</a>
     {{if !revoked}}
-      <a href="${revoke}" data-method="post" data-confirm="There is no undo. Are you really really sure?" rel="revoke">Revoke</a>
+      <a href="#/client/${id}/revoke" data-method="post" data-confirm="There is no undo. Are you really really sure?" rel="revoke">Revoke</a>
     {{/if}}
+    <a href="#/client/${id}" data-method="delete" data-confirm="There is no undo. Are you really really sure?" rel="delete">Delete</a>
     <div class="meta">
       Created {{html $.shortdate(revoked)}}
       {{if revoked}}Revoked {{html $.shortdate(revoked)}}{{/if}}
@@ -34,7 +35,7 @@
           {{if revoked}}
             {{html $.shortdate(revoked)}}
           {{else}}
-            <a href="${revoke}" data-method="post" data-confirm="Are you sure?" rel="revoke">Revoke</a>
+            <a href="#/token/${token}/revoke" data-method="post" data-confirm="Are you sure?" rel="revoke">Revoke</a>
           {{/if}}
         </td>
       </tr>

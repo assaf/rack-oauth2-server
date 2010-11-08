@@ -67,6 +67,7 @@ module Rack
         # Number of tokens to return in each page.
         set :tokens_per_page, 100
         set :public, ::File.dirname(__FILE__) + "/../admin"
+        set :method_override, true
         mime_type :js, "text/javascript"
         mime_type :tmpl, "text/x-jquery-template"
 
@@ -165,6 +166,11 @@ module Rack
           end
         end
 
+        delete "/api/client/:id" do
+          Server::Client.delete(params[:id])
+          200
+        end
+
         post "/api/client/:id/revoke" do
           client = Server::Client.find(params[:id])
           client.revoke!
@@ -188,7 +194,8 @@ module Rack
             halt 400, "Redirect URL is not a URL (must be http://....)" unless redirect_uri
             halt 400, "Redirect URL must be an absolute URL with HTTP/S scheme" unless
               redirect_uri.absolute? && %{http https}.include?(redirect_uri.scheme)
-            if image_url = URI.parse(params[:imageUrl].to_s.strip).normalize rescue nil
+            unless params[:imageUrl].nil? || params[:imageUrl].to_s.empty?
+              image_url = URI.parse(params[:imageUrl].to_s.strip).normalize rescue nil
               halt 400, "Image URL must be an absolute URL with HTTP/S scheme" unless
                 image_url.absolute? && %{http https}.include?(image_url.scheme)
             end
