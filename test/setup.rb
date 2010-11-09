@@ -8,7 +8,6 @@ require "ap"
 require "json"
 $: << File.dirname(__FILE__) + "/../lib"
 require "rack/oauth2/server"
-require "rack/oauth2/server/admin"
 
 
 ENV["RACK_ENV"] = "test"
@@ -26,7 +25,7 @@ when "sinatra", nil
   class Test::Unit::TestCase
     def app
       Rack::Builder.new do
-        map("/oauth/admin") { run Rack::OAuth2::Server::Admin }
+        map("/oauth/admin") { run Rack::OAuth2::Admin }
         map("/") { run MyApp }
       end
     end

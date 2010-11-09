@@ -73,19 +73,19 @@ For example:
 Rails 2.x, add the following to config/environment.rb:
 
   config.after_initialize do
-    config.middleware.use Rack::OAuth2::Server::Admin.mount "#{uri.path}"
-    Rack::OAuth2::Server::Admin.set :client_id, "#{client.id}"
-    Rack::OAuth2::Server::Admin.set :client_secret, "#{client.secret}"
+    config.middleware.use Rack::OAuth2::Admin.mount "#{uri.path}"
+    Rack::OAuth2::Admin.set :client_id, "#{client.id}"
+    Rack::OAuth2::Admin.set :client_secret, "#{client.secret}"
   end
 
 Sinatra, Padrino and other Rack applications, mount the console:
 
   Rack::Builder.new do
-    map("#{uri.path}") { run Rack::OAuth2::Server::Admin }
+    map("#{uri.path}") { run Rack::OAuth2::Admin }
     map("/") { run MyApp }
   end
-  Rack::OAuth2::Server::Admin.set :client_id, "#{client.id}"
-  Rack::OAuth2::Server::Admin.set :client_secret, "#{client.secret}"
+  Rack::OAuth2::Admin.set :client_id, "#{client.id}"
+  Rack::OAuth2::Admin.set :client_secret, "#{client.secret}"
 
 The console will authorize access by redirecting to
   https://#{uri.host}/oauth/authorize

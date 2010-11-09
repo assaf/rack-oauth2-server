@@ -1,3 +1,10 @@
+2010-11-09 version 1.4.3
+
+Renamed Rack::OAuth2::Server::Admin to just Rack::OAuth2::Admin.
+
+Checked in config.ru, I use this for testing the Web console.
+
+
 2010-11-09 version 1.4.2
 
 Fix to commend line tool to properly do authentication.
