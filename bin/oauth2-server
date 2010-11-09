@@ -11,7 +11,7 @@ if (i = ARGV.index("--db")) && ARGV[i+1]
   uri = URI.parse("mongo://#{url}") if uri.opaque
   db = uri.path.sub(/^\//, "")
   conn = Mongo::Connection.new(uri.host, uri.port)
-  coon.add_auth db, uri.user, uri.password if uri.user
+  conn.add_auth db, uri.user, uri.password if uri.user
   Server.database = conn[db]
   ARGV[i,2] = []
 end
