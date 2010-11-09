@@ -1,6 +1,11 @@
 2010-11-07 version 1.3.1
 
+Added command line tool, helps you get started and setup:
+  $ oauth2-server setup --db my_db
+
 Added a touch of color to the UI and ability to delete a client.
+
+You can not sign out of the Web console.
 
 
 2010-11-07 version 1.3.0

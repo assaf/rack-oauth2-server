@@ -1,5 +1,7 @@
 require "mongo"
 require "openssl"
+require "rack/oauth2/server/errors"
+require "rack/oauth2/server/utils"
 
 module Rack
   module OAuth2

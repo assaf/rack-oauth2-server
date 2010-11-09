@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rack-oauth2-server (1.3.0)
+    rack-oauth2-server (1.3.1)
       bson_ext
       mongo (~> 1)
       rack (~> 1)
@@ -41,7 +41,6 @@ GEM
     sinatra (1.1.0)
       rack (~> 1.1)
       tilt (~> 1.1)
-    therubyracer (0.8.0.pre3)
     thin (1.2.7)
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
@@ -65,7 +64,6 @@ DEPENDENCIES
   rails (~> 2.3)
   shoulda
   sinatra
-  therubyracer (~> 0.8.0.pre)
   thin
   timecop
   yard

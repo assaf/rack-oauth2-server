@@ -17,7 +17,7 @@
       <td class="name">
         <a href="#/client/${id}">
           {{if imageUrl}}<img src="${imageUrl}">{{/if}}
-          ${displayName || "untitled"}
+          ${displayName.trim() == "" ? "untitled" : displayName}
         </a>
       </td>
       <td class="secrets">

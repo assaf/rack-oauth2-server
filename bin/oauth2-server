@@ -1,0 +1,107 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift File.expand_path(File.dirname(__FILE__) + '/../lib')
+require "rack/oauth2/models"
+require "uri"
+include Rack::OAuth2
+
+
+if (i = ARGV.index("--db")) && ARGV[i+1]
+  url = ARGV[i + 1]
+  uri = URI.parse(url)
+  uri = URI.parse("mongo://#{url}") if uri.opaque
+  db = uri.path.sub(/^\//, "")
+  conn = Mongo::Connection.new(uri.host, uri.port)
+  coon.add_auth db, uri.user, uri.password if uri.user
+  Server.database = conn[db]
+  ARGV[i,2] = []
+end
+
+
+case ARGV[0]
+when "list"
+  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  Server::Client.all.each do |client|
+    next if client.revoked
+    print "%-30s\t%s\n" % [client.display_name, client.link]
+    print "  ID %s\tSecret %s\n" % [client.id, client.secret]
+    print "\n"
+  end
+when "register"
+  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  begin
+    print "Application name:\t"
+    display_name = $stdin.gets
+    print "Application URL:\t"
+    link = $stdin.gets
+    print "Redirect URI:\t\t"
+    redirect_uri = $stdin.gets
+    client = Server::Client.create(:display_name=>display_name, :link=>link, :redirect_uri=>redirect_uri)
+  rescue
+    puts "\nFailed to register client: #{$1}"
+    exit -1
+  end
+  puts "Registered #{client.display_name}"
+  puts "ID\t#{client.id}"
+  puts "Secret\t#{client.secret}"
+when "setup"
+  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  puts "Where would you mount the Web console? This is a URL that must end with /admin,"
+  puts "for example, http://example.com/oauth/admin"
+  uri = URI.parse($stdin.gets)
+  begin
+    uri.normalize!
+    fail "No an HTTP/S URL" unless uri.absolute? && %{http https}.include?(uri.scheme)
+    fail "Path must end with /admin" unless uri.path[/\/admin$/]
+    client = Server::Client.create(:display_name=>"OAuth Console", :link=>uri.to_s,
+                                   :image_url=>"#{uri.to_s}/images/oauth-2.png", :redirect_uri=>uri.to_s)
+  rescue
+    puts "\nFailed to register client: #{$!}"
+    exit -1
+  end
+  print <<-TEXT
+Make sure you ONLY authorize administrators to use the oauth-admin scope.
+For example:
+
+  def authorize
+    # Only admins allowed to authorize the scope oauth-admin
+    if oauth.scope.include?("oauth-admin") && !current_user.admin?
+      oauth.deny! oauth.authorization
+    end
+  end
+
+Rails 2.x, add the following to config/environment.rb:
+
+  config.middleware.use Rack::OAuth2::Server::Admin.mount "#{uri.path}"
+  Rack::OAuth2::Server::Admin.set :client_id, "#{client.id}"
+  Rack::OAuth2::Server::Admin.set :client_secret, "#{client.secret}"
+
+Sinatra, Padrino and other Rack applications, mount the console:
+
+  Rack::Builder.new do
+    map("#{uri.path}") { run Rack::OAuth2::Server::Admin }
+    map("/") { run MyApp }
+  end
+  Rack::OAuth2::Server::Admin.set :client_id, "#{client.id}"
+  Rack::OAuth2::Server::Admin.set :client_secret, "#{client.secret}"
+
+The console will authorize access by redirecting to
+  https://#{uri.host}/oauth/authorize
+
+If this is not your OAuth 2.0 authorization endpoint, you can change it by
+setting the :authorize option.
+  TEXT
+else
+  print <<-TEXT
+Usage: oauth2-server [options] COMMAND [args]
+
+Commands:
+  list            Lists all active clients
+  register        Register a new client application
+  setup           Create new admin account and help you
+                  setup the OAuth Web console
+
+Options:
+  --db database   Database name or connection URL
+  TEXT
+  exit -1
+end

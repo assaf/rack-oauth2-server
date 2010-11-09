@@ -101,6 +101,10 @@ button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0
   height: 32px;
   vertical-align: bottom;
 }
+#header .signout {
+  float: right;
+  font-size: 11pt;
+}
 
 #main {
   padding: 0 2em 4em 2em;
@@ -237,8 +241,8 @@ table.tokens td.scope {
   height: 24px;
   vertical-align: bottom;
 }
-.client .details a[rel=edit] {
-  margin: 0 0.3em 0 1em;
+.client .details a {
+  margin: 0 0.3em 0 0;
 }
 .client .details .meta {
   color: #888;

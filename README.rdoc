@@ -281,7 +281,13 @@ Clients can also register a redirect URL. This is optional but highly
 recommended for better security, preventing other applications from hijackin
 the client's ID/secret.
 
-For example:
+You can register clients using the command line tool +oauth2-server+:
+
+  $ oauth2-server register --db my_db
+
+Or you can register clients using the Web-based OAuth console, see below.
+
+Programatically, registering a new client is as simple as:
 
   $ ./script/console
   Loading development environment (Rails 2.3.8)
@@ -348,18 +354,23 @@ server you +curl+. Useful for development, testing, just don't use it with any
 production access tokens.
 
 
-== OAuth Console
+== OAuth Web Console
 
 We haz it, and it's pretty rad:
 
 http://github.com/downloads/flowtown/rack-oauth2-server/OAuth%20Console%20-%20All%20Clients.png
 
-To get the console running, you'll need to do the following. First, create a
-client application for it, with the redirect URI pointing to where you expect
-to mount the console, e.g. "http://example.com/oauth/admin").
+To get the console running, you'll need to do the following. First, you'll need
+to register a new client application that can access the OAuth console, with a
+redirect_uri that points to where you plan the Web console to live. This URL
+must end with "/admin", for example, "http://example.com/oauth/admin".
 
-Next, in your application, make sure to only authorize administrators with
-access to the console, which requires scope +oauth-admin+. For example:
+The easiest way to do this is to run the +oauth2-sever+ command line tool:
+
+  $ oauth2-server setup --db my_db
+
+Next, in your application, make sure to ONLY AUTHORIZE ADMINISTRATORS to access
+the console, by granting them access to the +oauth-admin+ scope. For example:
 
   def authorize
     # Only admins allowed to authorize the scope oauth-admin
@@ -368,9 +379,9 @@ access to the console, which requires scope +oauth-admin+. For example:
     end
   end
 
-Make sure you do that, or you'll allow anyone access to the OAuth console.
+Make sure you do that, or you'll allow anyone access to the OAuth Web console.
 
-Next, mount the OAuth console as part of your application, and feed it the
+Next, mount the OAuth Web console as part of your application, and feed it the
 client ID/secret. For example, for Rails add this to +config/environment.rb+:
 
   Rails::Initializer.run do |config|
@@ -393,6 +404,15 @@ like so (e.g. in +config.ru+):
 Next, open your browser to http://example.com/oauth/admin, or wherever you
 mounted the console.
 
+The OAuth Web console is a single-page client application that operates by
+accessing the OAuth API. The API is mounted at /oauth/admin/api (basically /api
+relative to the console), you can access it yourself if you have an access
+token with the scope +oauth-admin+.
+
+To get the access token, the console first redirects you to the path
++/oauth/authorize+, which it expects to be the OAuth 2.0 authorization
+endpoint. If you need to use a different endpoint, simply set the :authorize
+option to that URL.
 
 
 == Mandatory ASCII Diagram

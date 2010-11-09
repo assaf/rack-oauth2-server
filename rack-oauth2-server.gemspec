@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.homepage       = "http://github.com/assaf/#{spec.name}"
   spec.summary        = "OAuth 2.0 Authorization Server as a Rack module"
   spec.description    = "Because you don't allow strangers into your app, and OAuth 2.0 is the new awesome."
-  spec.post_install_message = ""
+  spec.post_install_message = "To get started, run the command oauth2-server"
 
   spec.files          = Dir["{bin,lib,rails,test}/**/*", "CHANGELOG", "VERSION", "MIT-LICENSE", "README.rdoc", "Rakefile", "Gemfile", "*.gemspec"]
 
