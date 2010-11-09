@@ -28,7 +28,7 @@
       {{each tokens.list}}
       <tr>
         <td class="token">${token}</td>
-        <td class="identity">${identity}</td>
+        <td class="identity">{{if link}}<a href="${link}">${identity}</a>{{else}}${identity}{{/if}}</td>
         <td class="scope">${scope}</td>
         <td class="created">{{html $.shortdate(created)}}</td>
         <td class="revoke">

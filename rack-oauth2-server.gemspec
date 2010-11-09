@@ -11,6 +11,7 @@ Gem::Specification.new do |spec|
   spec.post_install_message = "To get started, run the command oauth2-server"
 
   spec.files          = Dir["{bin,lib,rails,test}/**/*", "CHANGELOG", "VERSION", "MIT-LICENSE", "README.rdoc", "Rakefile", "Gemfile", "*.gemspec"]
+  spec.executable     = "oauth2-server"
 
   spec.has_rdoc         = true
   spec.extra_rdoc_files = "README.rdoc", "CHANGELOG"

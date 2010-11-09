@@ -2,6 +2,7 @@ require "rack/oauth2/models"
 require "rack/oauth2/server/errors"
 require "rack/oauth2/server/utils"
 require "rack/oauth2/server/helper"
+require "rack/oauth2/server/admin"
 
 
 module Rack
@@ -107,7 +108,7 @@ module Rack
               request.env["oauth.access_token"] = token
               request.env["oauth.identity"] = access_token.identity
               logger.info "Authorized #{access_token.identity}" if logger
-            rescue Error=>error
+            rescue OAuthError=>error
               # 5.2.  The WWW-Authenticate Response Header Field
               logger.info "HTTP authorization failed #{error.code}" if logger
               return unauthorized(request, error)
@@ -154,30 +155,32 @@ module Rack
       # application.
       def request_authorization(request, logger)
         state = request.GET["state"]
-        if request.GET["authorization"]
-          auth_request = self.class.get_auth_request(request.GET["authorization"]) rescue nil
-          if !auth_request || auth_request.revoked
-            logger.error "Invalid authorization request #{auth_request}" if logger
-            return bad_request("Invalid authorization request")
-          end
-          client = self.class.get_client(auth_request.client_id)
+        begin
 
-        else
+          if request.GET["authorization"]
+            auth_request = self.class.get_auth_request(request.GET["authorization"]) rescue nil
+            if !auth_request || auth_request.revoked
+              logger.error "Invalid authorization request #{auth_request}" if logger
+              return bad_request("Invalid authorization request")
+            end
+            response_type = auth_request.response_type # Needed for error handling
+            client = self.class.get_client(auth_request.client_id)
 
-          # 3.  Obtaining End-User Authorization
-          begin
-            redirect_uri = Utils.parse_redirect_uri(request.GET["redirect_uri"])
-          rescue InvalidRequestError=>error
-            logger.error "Authorization request with invalid redirect_uri: #{request.GET["redirect_uri"]} #{error.message}" if logger
-            return bad_request(error.message)
-          end
+          else
 
-          begin
+            # 3.  Obtaining End-User Authorization
+            begin
+              redirect_uri = Utils.parse_redirect_uri(request.GET["redirect_uri"])
+            rescue InvalidRequestError=>error
+              logger.error "Authorization request with invalid redirect_uri: #{request.GET["redirect_uri"]} #{error.message}" if logger
+              return bad_request(error.message)
+            end
+
             # 3. Obtaining End-User Authorization
+            response_type = request.GET["response_type"].to_s # Need this first, for error handling
             client = get_client(request)
             raise RedirectUriMismatchError unless client.redirect_uri.nil? || client.redirect_uri == redirect_uri.to_s
             requested_scope = request.GET["scope"].to_s.split.uniq.join(" ")
-            response_type = request.GET["response_type"].to_s
             raise UnsupportedResponseTypeError unless options.authorization_types.include?(response_type)
             if scopes = options.scopes
               allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
@@ -186,17 +189,24 @@ module Rack
             # Create object to track authorization request and let application
             # handle the rest.
             auth_request = AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
-          rescue Error=>error
-            logger.error "Authorization request error: #{error.code} #{error.message}" if logger
-            params = Rack::Utils.parse_query(redirect_uri.query).merge(:error=>error.code, :error_description=>error.message, :state=>state)
-            redirect_uri.query = Rack::Utils.build_query(params)
-            return redirect_to(redirect_uri)
+            request.env["oauth.authorization"] = auth_request.id.to_s
           end
+          # Pass back to application, watch for 403 (deny!)
+          logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope}" if logger
+          response = @app.call(request.env)
+          raise AccessDeniedError if response[0] == 403
+          return response
+        rescue OAuthError=>error
+          logger.error "Authorization request error: #{error.code} #{error.message}" if logger
+          params = { :error=>error.code, :error_description=>error.message, :state=>state }
+          if response_type == "token"
+            redirect_uri.fragment = Rack::Utils.build_query(params)
+          else # response type is code, or invalid
+            params = Rack::Utils.parse_query(redirect_uri.query).merge(params)
+            redirect_uri.query = Rack::Utils.build_query(params)
+          end
+          return redirect_to(redirect_uri)
         end
-
-        request.env["oauth.authorization"] = auth_request.id.to_s
-        logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope}" if logger
-        return @app.call(request.env)
       end
 
       # Get here on completion of the authorization. Authorization response in
@@ -206,29 +216,33 @@ module Rack
         status, headers, body = response
         auth_request = self.class.get_auth_request(headers["oauth.authorization"])
         redirect_uri = URI.parse(auth_request.redirect_uri)
-        if status == 401
+        if status == 403
           auth_request.deny!
         else
           auth_request.grant! headers["oauth.identity"]
         end
         # 3.1.  Authorization Response
-        if auth_request.response_type == "code" && auth_request.grant_code
-          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access code #{auth_request.grant_code}" if logger
-          params = { :code=>auth_request.grant_code, :scope=>auth_request.scope, :state=>auth_request.state }
+        if auth_request.response_type == "code"
+          if auth_request.grant_code
+            logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access code #{auth_request.grant_code}" if logger
+            params = { :code=>auth_request.grant_code, :scope=>auth_request.scope, :state=>auth_request.state }
+          else
+            logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization" if logger
+            params = { :error=>:access_denied, :state=>auth_request.state }
+          end
           params = Rack::Utils.parse_query(redirect_uri.query).merge(params)
           redirect_uri.query = Rack::Utils.build_query(params)
-          return redirect_to(redirect_uri)
-        elsif auth_request.response_type == "token" && auth_request.access_token
-          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access token #{auth_request.access_token}" if logger
-          params = { :access_token=>auth_request.access_token, :scope=>auth_request.scope, :state=>auth_request.state }
+        else # response type if token
+          if auth_request.access_token
+            logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access token #{auth_request.access_token}" if logger
+            params = { :access_token=>auth_request.access_token, :scope=>auth_request.scope, :state=>auth_request.state }
+          else
+            logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization" if logger
+            params = { :error=>:access_denied, :state=>auth_request.state }
+          end
           redirect_uri.fragment = Rack::Utils.build_query(params)
-          return redirect_to(redirect_uri)
-        else
-          logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization" if logger
-          params = Rack::Utils.parse_query(redirect_uri.query).merge(:error=>:access_denied, :state=>auth_request.state)
-          redirect_uri.query = Rack::Utils.build_query(params)
-          return redirect_to(redirect_uri)
         end
+        return redirect_to(redirect_uri)
       end
 
       # 4.  Obtaining an Access Token
@@ -264,7 +278,7 @@ module Rack
           response[:scope] = access_token.scope unless access_token.scope.empty?
           return [200, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, response.to_json]
           # 4.3.  Error Response
-        rescue Error=>error
+        rescue OAuthError=>error
           logger.error "Access token request error: #{error.code} #{error.message}" if logger
           return unauthorized(request, error) if InvalidClientError === error && request.basic?
           return [400, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, 

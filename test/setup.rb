@@ -36,7 +36,7 @@ when "sinatra", nil
     end
   end
 
-when "rails2"
+when "rails"
 
   require "initializer"
   require "action_controller"

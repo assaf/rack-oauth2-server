@@ -63,7 +63,8 @@ class AccessGrantTest < Test::Unit::TestCase
     params = { :redirect_uri=>client.redirect_uri, :client_id=>client.id, :client_secret=>client.secret, :response_type=>"code",
                :scope=>"read write", :state=>"bring this back" }
     get "/oauth/authorize?" + Rack::Utils.build_query(params)
-    post "/oauth/grant"
+    authorization = last_response.body[/authorization:\s*(\S+)/, 1]
+    post "/oauth/grant", :authorization=>authorization
     @code = Rack::Utils.parse_query(URI.parse(last_response["Location"]).query)["code"]
   end
 

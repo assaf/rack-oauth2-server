@@ -1,4 +1,30 @@
-2010-11-07 version 1.3.1
+2010-11-09 version 1.4.0
+
+If authorization handle is passed as request parameter (the recommended way),
+then you can call oauth.grant! with a single argument and oauth.deny! with no
+arguments.
+
+You can now call oauth.deny! at any point during the authorization flow, e.g.
+automatically deny all requests based on scope and client.
+
+To deny access, return status code 403 (was, incorrectly 401). Or just use
+oauth.deny!.
+
+Web console gets template_url setting you can use to map access token identity
+into a URL in your application. The substitution variable is "{id}".
+
+Added error page when authorization attempt fails (instead of endless
+redirect).
+
+Fixed mounting of Web console on Rails. If it failed you before, try again.
+
+Fixed documentation for configuration under Rails, clarify that all the
+interesting stuff happens in after_initialize.
+
+Fixed error responses for response_type=token to use fragment identifier.
+
+
+2010-11-08 version 1.3.1
 
 Added command line tool, helps you get started and setup:
   $ oauth2-server setup --db my_db

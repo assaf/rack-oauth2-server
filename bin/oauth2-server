@@ -62,18 +62,18 @@ when "setup"
 Make sure you ONLY authorize administrators to use the oauth-admin scope.
 For example:
 
-  def authorize
+  before_filter do
     # Only admins allowed to authorize the scope oauth-admin
-    if oauth.scope.include?("oauth-admin") && !current_user.admin?
-      oauth.deny! oauth.authorization
-    end
+    head oauth.deny! if oauth.scope.include?("oauth-admin") && !current_user.admin?
   end
 
 Rails 2.x, add the following to config/environment.rb:
 
-  config.middleware.use Rack::OAuth2::Server::Admin.mount "#{uri.path}"
-  Rack::OAuth2::Server::Admin.set :client_id, "#{client.id}"
-  Rack::OAuth2::Server::Admin.set :client_secret, "#{client.secret}"
+  config.after_initialize do
+    config.middleware.use Rack::OAuth2::Server::Admin.mount "#{uri.path}"
+    Rack::OAuth2::Server::Admin.set :client_id, "#{client.id}"
+    Rack::OAuth2::Server::Admin.set :client_secret, "#{client.secret}"
+  end
 
 Sinatra, Padrino and other Rack applications, mount the console:
 

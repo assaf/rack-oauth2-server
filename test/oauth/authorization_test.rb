@@ -21,11 +21,11 @@ class AuthorizationTest < Test::Unit::TestCase
     end
 
     def should_ask_user_for_authorization(&block)
-      should "should inform user about client" do
+      should "inform user about client" do
         response = last_response.body.split("\n").inject({}) { |h,l| n,v = l.split(/:\s*/) ; h[n.downcase] = v ; h }
         assert_equal "UberClient", response["client"]
       end
-      should "should inform user about scope" do
+      should "inform user about scope" do
         response = last_response.body.split("\n").inject({}) { |h,l| n,v = l.split(/:\s*/) ; h[n.downcase] = v ; h }
         assert_equal "read, write", response["scope"]
       end
@@ -42,6 +42,10 @@ class AuthorizationTest < Test::Unit::TestCase
 
   def request_authorization(changes = nil)
     get "/oauth/authorize?" + Rack::Utils.build_query(@params.merge(changes || {}))
+  end
+
+  def authorization
+    last_response.body[/authorization:\s*(\S+)/, 1]
   end
 
 
@@ -117,6 +121,13 @@ class AuthorizationTest < Test::Unit::TestCase
     should_redirect_with_error :invalid_scope
   end
 
+  context "immediately denied" do
+    setup do
+      request_authorization :scope=>"time-travel"
+    end
+    should_redirect_with_error :access_denied
+  end
+
 
   # 3.1.  Authorization Response
   
@@ -128,7 +139,7 @@ class AuthorizationTest < Test::Unit::TestCase
     should_ask_user_for_authorization
 
     context "and granted" do
-      setup { post "/oauth/grant" }
+      setup { post "/oauth/grant", :authorization=>authorization }
 
       should "redirect" do
         assert_equal 302, last_response.status
@@ -157,7 +168,7 @@ class AuthorizationTest < Test::Unit::TestCase
     end
 
     context "and denied" do
-      setup { post "/oauth/deny" }
+      setup { post "/oauth/deny", :authorization=>authorization }
 
       should "redirect" do
         assert_equal 302, last_response.status
@@ -195,7 +206,7 @@ class AuthorizationTest < Test::Unit::TestCase
     should_ask_user_for_authorization
 
     context "and granted" do
-      setup { post "/oauth/grant" }
+      setup { post "/oauth/grant", :authorization=>authorization }
 
       should "redirect" do
         assert_equal 302, last_response.status
@@ -224,7 +235,7 @@ class AuthorizationTest < Test::Unit::TestCase
     end
 
     context "and denied" do
-      setup { post "/oauth/deny" }
+      setup { post "/oauth/deny", :authorization=>authorization }
 
       should "redirect" do
         assert_equal 302, last_response.status
@@ -236,7 +247,7 @@ class AuthorizationTest < Test::Unit::TestCase
       end
 
       context "redirect URL" do
-        setup { @return = Rack::Utils.parse_query(URI.parse(last_response["Location"]).query) }
+        setup { @return = Rack::Utils.parse_query(URI.parse(last_response["Location"]).fragment) }
 
         should "not include authorization code" do
           assert !@return["code"]
@@ -259,8 +270,7 @@ class AuthorizationTest < Test::Unit::TestCase
   context "with authorization request" do
     setup do
       request_authorization
-      response = last_response.body.split("\n").inject({}) { |h,l| n,v = l.split(/:\s*/) ; h[n.downcase] = v ; h }
-      get "/oauth/authorize?" + Rack::Utils.build_query(:authorization=>response["authorization"])
+      get "/oauth/authorize?" + Rack::Utils.build_query(:authorization=>authorization)
     end
 
     should_ask_user_for_authorization

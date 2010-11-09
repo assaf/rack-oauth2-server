@@ -30,14 +30,15 @@ when required, but you do need to configure it from within
 example:
 
   Rails::Initializer.run do |config|
-    config.oauth.database = Mongo::Connection.new["my_db"]
-    config.oauth.scopes = %w{read write}
-    config.oauth.authenticator = lambda do |username, password|
-      user = User.find(username)
-      user if user && user.authenticated?(password)
-    end
-
     . . .
+    config.after_initialize do
+      config.oauth.database = Mongo::Connection.new["my_db"]
+      config.oauth.scopes = %w{read write}
+      config.oauth.authenticator = lambda do |username, password|
+        user = User.find(username)
+        user if user && user.authenticated?(password)
+      end
+    end
   end
 
 For Sinatra and Padrino, first require +rack/oauth2/sinatra+ and register
@@ -110,8 +111,8 @@ user back to the client application with an authorization code or access token.
 
 To signal that the user denied the authorization requests your application sets
 the response header oauth.authorization as before, and returns the status code
-401 (Unauthorized). Rack::OAuth2::Server will then redirect the user back to
-the client application with a suitable error code.
+403 (Forbidden). Rack::OAuth2::Server will then redirect the user back to the
+client application with a suitable error code.
 
 In Rails, the entire flow would look something like this:
 
@@ -125,11 +126,11 @@ In Rails, the entire flow would look something like this:
     end
 
     def grant
-      head oauth.grant!(params[:authorization], current_user.id)
+      head oauth.grant!(current_user.id)
     end
 
     def deny
-      head oauth.deny!(params[:authorization])
+      head oauth.deny!
     end
   end
 
@@ -149,11 +150,11 @@ In Sinatra/Padrino, it would look something like this:
   end
 
   post "/oauth/grant" do
-    oauth.grant! params[:authorization], "Superman"
+    oauth.grant! "Superman"
   end
 
   post "/oauth/deny" do
-    oauth.deny! params[:authorization]
+    oauth.deny!
   end
 
 The view would look something like this:
@@ -374,9 +375,7 @@ the console, by granting them access to the +oauth-admin+ scope. For example:
 
   def authorize
     # Only admins allowed to authorize the scope oauth-admin
-    if oauth.scope.include?("oauth-admin") && !current_user.admin?
-      oauth.deny! oauth.authorization
-    end
+    head oauth.deny! if oauth.scope.include?("oauth-admin") && !current_user.admin?
   end
 
 Make sure you do that, or you'll allow anyone access to the OAuth Web console.
@@ -386,9 +385,11 @@ client ID/secret. For example, for Rails add this to +config/environment.rb+:
 
   Rails::Initializer.run do |config|
     . . .
-    config.middleware.use Rack::OAuth2::Server::Admin.mount
-    Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
-    Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
+    config.after_initialize do
+      config.middleware.use Rack::OAuth2::Server::Admin.mount
+      Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
+      Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
+    end
   end
 
 For Sinatra, Padrino and other Rack-based applications, you'll want to mount
@@ -403,6 +404,11 @@ like so (e.g. in +config.ru+):
 
 Next, open your browser to http://example.com/oauth/admin, or wherever you
 mounted the console.
+
+Another option, +template_url+ allows you to link access token identities to
+URLs in your application, using the substitution variable "{id}". For example:
+
+  Rack::OAuth2::Server::Admin.set :template_url, "https://example.com/accounts/{id}"
 
 The OAuth Web console is a single-page client application that operates by
 accessing the OAuth API. The API is mounted at /oauth/admin/api (basically /api

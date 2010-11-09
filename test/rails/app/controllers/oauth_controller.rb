@@ -1,14 +1,17 @@
 class OauthController < ApplicationController
+  before_filter do |c|
+    c.send :head, c.oauth.deny! if c.oauth.scope.include?("time-travel") # Only Superman can do that
+  end
+
   def authorize
-    session["oauth.authorization"] = oauth.authorization
     render :text=>"client: #{oauth.client.display_name}\nscope: #{oauth.scope.join(", ")}\nauthorization: #{oauth.authorization}"
   end
 
   def grant
-    head oauth.grant!(session["oauth.authorization"], "Superman")
+    head oauth.grant!(params["authorization"], "Batman")
   end
 
   def deny
-    head oauth.deny!(session["oauth.authorization"])
+    head oauth.deny!(params["authorization"])
   end
 end

@@ -86,7 +86,7 @@ module Rack
         #
         # @return [String] Authorization handle
         def authorization
-          @request_id ||= @request.env["oauth.authorization"]
+          @request_id ||= @request.env["oauth.authorization"] || @request.params["authorization"]
         end
 
         # Sets the authorization request handle. Use this during the
@@ -100,26 +100,31 @@ module Rack
 
         # Grant authorization request. Call this at the end of the authorization
         # flow to signal that the user has authorized the client to access the
-        # specified identity. Don't render anything else.
+        # specified identity. Don't render anything else.  Argument required if
+        # authorization handle is not passed in the request parameter
+        # +authorization+.
         #
-        # @param [String] authorization Authorization handle
+        # @param [String, nil] authorization Authorization handle
         # @param [String] identity Identity string
         # @return 200
-        def grant!(authorization, identity)
-          @response["oauth.authorization"] = authorization.to_s
+        def grant!(auth, identity = nil)
+          auth, identity = authorization, auth unless identity
+          @response["oauth.authorization"] = auth.to_s
           @response["oauth.identity"] = identity.to_s
           @response.status = 200
         end
 
         # Deny authorization request. Call this at the end of the authorization
         # flow to signal that the user has not authorized the client. Don't
-        # render anything else.
+        # render anything else. Argument required if authorization handle is not
+        # passed in the request parameter +authorization+.
         #
-        # @param [String] authorization Authorization handle
+        # @param [String, nil] auth Authorization handle
         # @return 401
-        def deny!(authorization)
-          @response["oauth.authorization"] = authorization.to_s
-          @response.status = 401
+        def deny!(auth = nil)
+          auth ||= authorization
+          @response["oauth.authorization"] = auth.to_s
+          @response.status = 403
         end
 
         # Returns all access tokens associated with this identity.

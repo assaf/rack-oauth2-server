@@ -16,7 +16,7 @@ module Rack
               def mount(klass, path)
                 @klass = klass
                 @path = path
-                @match = /^#{Regexp.escape(path)}\/(.*)$/
+                @match = /^#{Regexp.escape(path)}(\/.*|$)?/
               end
 
               attr_reader :klass, :path, :match
@@ -31,7 +31,7 @@ module Rack
               path = env["PATH_INFO"].to_s
               script_name = env['SCRIPT_NAME']
               if path =~ self.class.match && rest = $1
-                env.merge! "SCRIPT_NAME"=>(script_name + self.class.path), "PATH_INFO"=>"/#{rest}"
+                env.merge! "SCRIPT_NAME"=>(script_name + self.class.path), "PATH_INFO"=>rest
                 return @admin.call(env)
               else
                 return @pass.call(env)
@@ -63,6 +63,9 @@ module Rack
         # Use this URL to authorize access to this console. If not set, goes to
         # /oauth/authorize.
         set :authorize, nil
+        # Map access token identity to URL on your application, by replacing
+        # "{id}" with the token identity (e.g. "http://example.com/user/{id}")
+        set :template_url, nil
 
         # Number of tokens to return in each page.
         set :tokens_per_page, 100
@@ -213,6 +216,7 @@ module Rack
           def token_as_json(token)
             { :token=>token.token, :identity=>token.identity, :scope=>token.scope, :created=>token.created_at,
               :expired=>token.expires_at, :revoked=>token.revoked,
+              :link=>settings.template_url && settings.template_url.gsub("{id}", token.identity),
               :revoke=>"#{request.script_name}/api/token/#{token.token}/revoke" }
           end
         end

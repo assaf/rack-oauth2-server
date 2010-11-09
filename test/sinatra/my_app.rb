@@ -5,27 +5,30 @@ class MyApp < Sinatra::Base
   set :sessions, true
 
   register Rack::OAuth2::Sinatra
-  oauth.scopes = %w{read write}
+  oauth.scopes = %w{read write time-travel}
   oauth.authenticator = lambda do |username, password|
-    "Superman" if username == "cowbell" && password == "more"
+    "Batman" if username == "cowbell" && password == "more"
   end
   oauth.host = "example.org"
   oauth.database = DATABASE
 
 
   # 3.  Obtaining End-User Authorization
+ 
+  before "/oauth/*" do 
+    halt oauth.deny! if oauth.scope.include?("time-travel") # Only Superman can do that
+  end
 
   get "/oauth/authorize" do
-    session["oauth.authorization"] = oauth.authorization
     "client: #{oauth.client.display_name}\nscope: #{oauth.scope.join(", ")}\nauthorization: #{oauth.authorization}"
   end
 
   post "/oauth/grant" do
-    oauth.grant! session["oauth.authorization"], "Superman"
+    oauth.grant! "Batman"
   end
 
   post "/oauth/deny" do
-    oauth.deny! session["oauth.authorization"]
+    oauth.deny!
   end
 
 
@@ -61,7 +64,7 @@ class MyApp < Sinatra::Base
   end
 
   get "/list_tokens" do
-    oauth.list_access_tokens("Superman").map(&:token).join(" ")
+    oauth.list_access_tokens("Batman").map(&:token).join(" ")
   end
   
 end

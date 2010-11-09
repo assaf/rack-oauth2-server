@@ -24,7 +24,7 @@ class ApiController < ApplicationController
   end
 
   def list_tokens
-    render :text=>oauth.list_access_tokens("Superman").map(&:token).join(" ")
+    render :text=>oauth.list_access_tokens("Batman").map(&:token).join(" ")
   end
 
   def user

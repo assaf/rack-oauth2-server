@@ -17,10 +17,6 @@ class AdminApiTest < Test::Unit::TestCase
   extend Helpers
 
 
-  def setup
-    super
-  end
-
   def without_scope
     token = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "nobody", client.id)
     header "Authorization", "OAuth #{token.token}"

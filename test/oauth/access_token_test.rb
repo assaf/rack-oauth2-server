@@ -45,7 +45,8 @@ class AccessTokenTest < Test::Unit::TestCase
     params = { :redirect_uri=>client.redirect_uri, :client_id=>client.id, :client_secret=>client.secret, :response_type=>"code",
                :scope=>"read write", :state=>"bring this back" }
     get "/oauth/authorize?" + Rack::Utils.build_query(params)
-    post "/oauth/grant"
+    authorization = last_response.body[/authorization:\s*(\S+)/, 1]
+    post "/oauth/grant", :authorization=>authorization
     code = Rack::Utils.parse_query(URI.parse(last_response["Location"]).query)["code"]
     # Get access token
     basic_authorize client.id, client.secret
@@ -72,7 +73,7 @@ class AccessTokenTest < Test::Unit::TestCase
         with_token
         get "/public"
       end
-      should_return_resource "HAI from Superman"
+      should_return_resource "HAI from Batman"
     end
   end
 
@@ -238,7 +239,7 @@ class AccessTokenTest < Test::Unit::TestCase
       end
 
       should "render user name" do
-        assert_equal "Superman", last_response.body
+        assert_equal "Batman", last_response.body
       end
     end
 
@@ -271,23 +272,23 @@ class AccessTokenTest < Test::Unit::TestCase
 
   context "get_token_for" do
     should "return two different tokens for two different clients" do
-      myapp = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "4cca30423321e895cb000001")
-      yourapp = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "4fff30423321e895cb000001")
+      myapp = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4cca30423321e895cb000001")
+      yourapp = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4fff30423321e895cb000001")
       assert myapp.token != yourapp.token
     end
     should "return two different tokens for two different identities" do
-      me = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "4cca30423321e895cb000001")
-      you = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4cca30423321e895cb000001")
+      me = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4cca30423321e895cb000001")
+      you = Rack::OAuth2::Server::AccessToken.get_token_for("Robin", "read write", "4cca30423321e895cb000001")
       assert me.token != you.token
     end
     should "return two different tokens for two different scope" do
-      write = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write", "4cca30423321e895cb000001")
-      math = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read math", "4cca30423321e895cb000001")
+      write = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4cca30423321e895cb000001")
+      math = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read math", "4cca30423321e895cb000001")
       assert write.token != math.token
     end
     should "return same tokens regardless of order of scope" do
-      one = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "read write math", "4cca30423321e895cb000001")
-      two = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "math write read", "4cca30423321e895cb000001")
+      one = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write math", "4cca30423321e895cb000001")
+      two = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "math write read", "4cca30423321e895cb000001")
       assert_equal one.token, two.token
     end
   end

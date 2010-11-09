@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rack-oauth2-server (1.3.1)
+    rack-oauth2-server (1.4.0)
       bson_ext
       mongo (~> 1)
       rack (~> 1)

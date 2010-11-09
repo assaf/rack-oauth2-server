@@ -107,8 +107,10 @@ button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0
 }
 
 #main {
+  margin: 0;
   padding: 0 2em 4em 2em;
   background: #fff;
+  border: 1px solid #fff;
 }
 #footer {
   background: #eee;
@@ -189,7 +191,7 @@ table.clients td.secrets dd:after {
 }
 
 table.tokens td.token {
-  width: 32em;
+  width: 36em;
 }
 table.tokens td.scope {
 }
@@ -262,6 +264,14 @@ table.tokens td.scope {
 }
 .client.new>*, .client.edit>* {
   margin-left: 60px;
+}
+
+.no-access {
+  margin: 0;
+  padding: 0;
+}
+.no-access h1 {
+  color: red;
 }
 
 .loading {
