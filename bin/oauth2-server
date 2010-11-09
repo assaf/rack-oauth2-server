@@ -9,10 +9,9 @@ if (i = ARGV.index("--db")) && ARGV[i+1]
   url = ARGV[i + 1]
   uri = URI.parse(url)
   uri = URI.parse("mongo://#{url}") if uri.opaque
-  db = uri.path.sub(/^\//, "")
-  conn = Mongo::Connection.new(uri.host, uri.port)
-  conn.add_auth db, uri.user, uri.password if uri.user
-  Server.database = conn[db]
+  db = Mongo::Connection.new(uri.host, uri.port)[uri.path.sub(/^\//, "")]
+  db.authenticate uri.user, uri.password if uri.user
+  Server.database = db
   ARGV[i,2] = []
 end
 
@@ -37,7 +36,7 @@ when "register"
     redirect_uri = $stdin.gets
     client = Server::Client.create(:display_name=>display_name, :link=>link, :redirect_uri=>redirect_uri)
   rescue
-    puts "\nFailed to register client: #{$1}"
+    puts "\nFailed to register client: #{$!}"
     exit -1
   end
   puts "Registered #{client.display_name}"
@@ -59,6 +58,10 @@ when "setup"
     exit -1
   end
   print <<-TEXT
+
+Next Steps
+==========
+
 Make sure you ONLY authorize administrators to use the oauth-admin scope.
 For example:
 

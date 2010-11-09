@@ -1,3 +1,10 @@
+2010-11-09 version 1.4.2
+
+Fix to commend line tool to properly do authentication.
+
+Added Sinatra as dependency.
+
+
 2010-11-09 version 1.4.1
 
 Fix to command line tool when accessing MongoDB with username/password.

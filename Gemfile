@@ -2,7 +2,6 @@ source :rubygems
 gemspec
 
 group :development do
-  gem "sinatra"
   gem "thin"
   gem "yard"
 end
@@ -14,6 +13,5 @@ group :test do
   gem "rack-test"
   gem "rails", "~>2.3"
   gem "shoulda"
-  gem "sinatra"
   gem "timecop"
 end

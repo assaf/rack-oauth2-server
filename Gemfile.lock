@@ -1,10 +1,11 @@
 PATH
   remote: .
   specs:
-    rack-oauth2-server (1.4.0)
+    rack-oauth2-server (1.4.2)
       bson_ext
       mongo (~> 1)
       rack (~> 1)
+      sinatra (~> 1)
 
 GEM
   remote: http://rubygems.org/
@@ -63,7 +64,7 @@ DEPENDENCIES
   rack-test
   rails (~> 2.3)
   shoulda
-  sinatra
+  sinatra (~> 1)
   thin
   timecop
   yard
