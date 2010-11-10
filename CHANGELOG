@@ -1,3 +1,11 @@
+2010-11-10 version 1.4.4
+
+Added a practice server. You can use it to test your OAuth 2.0 client library.
+To fire up the practice server: oauth2-server practice
+
+Bumped up dependencies on Rack 1.1 or later, Sinatra 1.1 or later.
+
+
 2010-11-09 version 1.4.3
 
 Renamed Rack::OAuth2::Server::Admin to just Rack::OAuth2::Admin.
