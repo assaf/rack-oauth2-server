@@ -1,11 +1,14 @@
 <div class="client">
   <div class="details">
-    <a href="${link}" class="name">{{if imageUrl}}<img src="${imageUrl}">{{/if}} ${displayName}</a>
-    <a href="#/client/${id}/edit" rel="edit">Edit</a>
-    {{if !revoked}}
-      <a href="#/client/${id}/revoke" data-method="post" data-confirm="There is no undo. Are you really really sure?" rel="revoke">Revoke</a>
-    {{/if}}
-    <a href="#/client/${id}" data-method="delete" data-confirm="There is no undo. Are you really really sure?" rel="delete">Delete</a>
+    <h2 class="name">{{if imageUrl}}<img src="${imageUrl}">{{/if}} ${displayName}</h2>
+    <div class="actions">
+      <a href="#/client/${id}/edit" rel="edit">Edit</a>
+      {{if !revoked}}
+        <a href="#/client/${id}/revoke" data-method="post" data-confirm="There is no undo. Are you really really sure?" rel="revoke">Revoke</a>
+      {{/if}}
+      <a href="#/client/${id}" data-method="delete" data-confirm="There is no undo. Are you really really sure?" rel="delete">Delete</a>
+    </div>
+    <div class="meta">Site: <a href="${link}">${link}</a></div>
     <div class="meta">
       Created {{html $.shortdate(revoked)}}
       {{if revoked}}Revoked {{html $.shortdate(revoked)}}{{/if}}

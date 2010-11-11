@@ -5,6 +5,7 @@ Rack::OAuth2::Server.database = Mongo::Connection.new["test"]
 class Authorize < Sinatra::Base
   register Rack::OAuth2::Sinatra
   get "/oauth/authorize" do
+    content_type "text/html"
     <<-HTML
     <h1>#{oauth.client.display_name} wants to access your account.</h1>
     <form action="/oauth/grant" method="post"><button>Let It!</button>

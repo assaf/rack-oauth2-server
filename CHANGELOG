@@ -1,3 +1,10 @@
+2010-11-11 version 1.4.5
+
+Cosmetic changes to UI. Added throbber and error messages when AJAX requests go
+foul. Header on the left, sign-out on the right, as most people expect it.
+Client name is no longer a link to the site, site link shown separately.
+
+
 2010-11-10 version 1.4.4
 
 Added a practice server. You can use it to test your OAuth 2.0 client library.

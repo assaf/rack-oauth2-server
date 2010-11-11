@@ -45,21 +45,21 @@ button {
   line-height: 1.3em;
   vertical-align: bottom;
   padding: 2px 8px;
-	background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(226,226,226,0.0)), to(rgba(226,226,226,1.0)));
+  background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(226,226,226,0.0)), to(rgba(226,226,226,1.0)));
   -webkit-border-radius: 4px; -moz-border-radius: 4px;
-	-moz-box-shadow: 0 0 4px rgba(0,0,0,0.0);
-	-webkit-box-shadow: 0 0 4px rgba(0,0,0,0.0);
+  -moz-box-shadow: 0 0 4px rgba(0,0,0,0.0);
+  -webkit-box-shadow: 0 0 4px rgba(0,0,0,0.0);
 }
 button:hover, button:focus {
-	text-shadow: 0 -1px 1px rgba(255,255,255,0.25);
+  text-shadow: 0 -1px 1px rgba(255,255,255,0.25);
   border: 1px solid #0073ea;
   background: #0073ea 50% 50% repeat-x;
   background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 115, 234, 0.5)), to(rgba(0,115,234, 1.0)));
   color: #fff;
   text-decoration: none;
   cursor: pointer;
-	-moz-box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-	-webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  -moz-box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  -webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 115, 234, 1.0)), to(rgba(0,115,234, 0.5))); position: relative; top: 1px }
 
@@ -80,20 +80,21 @@ button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0
 
 #header {
   margin: 0;
-  padding: 2em;
-  background: #fff;
-  background: -webkit-gradient(linear, left top, left bottom, from(#ccf), to(#fff));
-  background: -moz-linear-gradient(top,  #ccf,  #fff);
+  padding: 1em 2em 3em 2em;
+  border-bottom: 2px solid #CCC;
+  background: #6595A4;
+  color: #fff;
 }
 #header .title {
   font-size: 18pt;
   font-weight: bold;
   display: block;
-  text-align: right;
   line-height: 32px;
+  float: left;
 }
 #header .title a {
-  color: #000;
+  color: #fff;
+  text-shadow: white 0px 0px 1px;
   text-decoration: none;
 }
 #header .title img {
@@ -102,22 +103,22 @@ button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0
   vertical-align: bottom;
 }
 #header .signout {
+  color: #C8E9F3;
   float: right;
   font-size: 11pt;
+  line-height: 32px;
 }
 
 #main {
   margin: 0;
-  padding: 0 2em 4em 2em;
+  padding: 2em 2em 4em 2em;
   background: #fff;
   border: 1px solid #fff;
 }
 #footer {
   background: #eee;
-  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#eee));
-  background: -moz-linear-gradient(top,  #fff,  #eee);
   color: #666;
-  border-top: 1px solid transparent;
+  border-top: 1px solid #ccc;
   font-size: 90%;
   padding: 0 2em 2em 2em;
 }
@@ -234,8 +235,10 @@ table.tokens td.scope {
   float: left;
 }
 .client .details .name {
-  font-size: 15pt;
+  margin: 0;
+  font-size: 16pt;
   font-weight: bold;
+  float: left;
 }
 .client .details img {
   border: none;
@@ -243,8 +246,13 @@ table.tokens td.scope {
   height: 24px;
   vertical-align: bottom;
 }
-.client .details a {
-  margin: 0 0.3em 0 0;
+.client .details .actions {
+  float: left;
+  line-height: 20pt;
+  margin-left: 1em;
+}
+.client .details .actions a {
+  margin: 0 0 0 0.3em;
 }
 .client .details .meta {
   color: #888;
@@ -274,6 +282,15 @@ table.tokens td.scope {
   color: red;
 }
 
+#throbber {
+  display: none;
+  position: absolute;
+  top: 6em;
+  right: 2em;
+  width: 48px;
+  height: 48px;
+  content: "";
+}
 .loading {
   background: url("../images/loading.gif") no-repeat 50% 50%;
 }
