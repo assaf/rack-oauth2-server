@@ -7,6 +7,7 @@ require "timecop"
 require "ap"
 require "json"
 $: << File.dirname(__FILE__) + "/../lib"
+$: << File.expand_path(File.dirname(__FILE__) + "/..")
 require "rack/oauth2/server"
 
 
@@ -37,29 +38,45 @@ when "sinatra", nil
 
 when "rails"
 
-  require "initializer"
-  require "action_controller"
-  RAILS_ROOT = File.dirname(__FILE__) + "/rails"
   RAILS_ENV = "test"
-
-  class << Rails
-    def vendor_rails?
-      false
-    end
+  RAILS_ROOT = File.dirname(__FILE__) + "/rails3"
+  begin
+    require "rails"
+  rescue LoadError
   end
-  require RAILS_ROOT + "/config/environment"
-  puts "Testing with Rails #{Rails.version}"
+
+  if defined?(Rails::Railtie)
+    # Rails 3.x
+    require "rack/oauth2/server/railtie"
+    require File.dirname(__FILE__) + "/rails3/config/environment"
+    puts "Testing with Rails #{Rails.version}"
   
-  class Test::Unit::TestCase
-    def app
-      ActionController::Dispatcher.new
+    class Test::Unit::TestCase
+      def app
+        Rails.application
+      end
+
+      def config
+        Rails.configuration.oauth
+      end
     end
 
-    def admin!
-    end
+  else
+    # Rails 2.x
+    RAILS_ROOT = File.dirname(__FILE__) + "/rails2"
+    require "initializer"
+    require "action_controller"
+    require File.dirname(__FILE__) + "/rails2/config/environment"
+    puts "Testing with Rails #{Rails.version}"
+  
+    class Test::Unit::TestCase
+      def app
+        ActionController::Dispatcher.new
+      end
 
-    def config
-      Rails.configuration.oauth
+      def config
+        Rails.configuration.oauth
+      end
     end
   end
 

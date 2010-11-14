@@ -2,19 +2,19 @@
 {{else}}<form action="#/clients" method="post" class="client new">{{/if}}
   <img id="image">
   <label>Display Name
-    <input type="text" name="displayName" value="${displayName}" size="30" autofocus>
+    <input type="text" name="displayName" value="${displayName}" size="30" required autofocus>
     <p class="hint">This is the application name that users see when asked to authorize.</p>
   </label>
   <label>Site URL
-    <input type="text" name="link" value="${link}" size="30">
+    <input type="url" name="link" value="${link}" size="30" required>
     <p class="hint">This is a link to the application's site.</p>
   </label>
   <label>Image URL
-    <input type="text" name="imageUrl" value="${imageUrl}" size="30">
+    <input type="url" name="imageUrl" value="${imageUrl}" size="30">
     <p class="hint">This is a link to the application's icon (48x48).</p>
   </label>
   <label>Redirect URI
-    <input type="text" name="redirectUri" value="${redirectUri}" size="30">
+    <input type="url" name="redirectUri" value="${redirectUri}" size="30" required>
     <p class="hint">Users redirected back to this URL on successful authorization.</p>
   </label>
   {{if id}}<button>Save Changes</button>

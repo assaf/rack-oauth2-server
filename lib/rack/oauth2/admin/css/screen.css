@@ -24,7 +24,9 @@ label {
   font-size: 0.9em;
   margin: 0.9em 0;
 }
-label input, label textarea, label select { display: block }
+label input, label textarea, label select {
+  display: block;
+}
 label input, label textarea {
   font-size: 12pt;
   line-height: 1.3em;
@@ -62,6 +64,10 @@ button:hover, button:focus {
   -webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0, 115, 234, 1.0)), to(rgba(0,115,234, 0.5))); position: relative; top: 1px }
+.error {
+  color: #f44;
+  padding-left: 1em;
+}
 
 
 /* Message dropping down from the top */
@@ -71,7 +77,7 @@ button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0
   left: 0;
   right: 0;
   line-height: 1.6em;
-  background: #ffd;
+  background: #FFFE36;
   color: #000;
   border-bottom: 1px solid #ddd;
   text-align: center;

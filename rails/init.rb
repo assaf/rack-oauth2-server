@@ -1,3 +1,4 @@
+# Rails 2.x initialization.
 require "rack/oauth2/rails"
 
 config.extend ::Rack::OAuth2::Rails::Configuration
