@@ -18,17 +18,45 @@ class AdminApiTest < Test::Unit::TestCase
 
 
   def without_scope
-    token = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "nobody", client.id)
+    token = Server::AccessToken.get_token_for("Superman", "nobody", client.id)
     header "Authorization", "OAuth #{token.token}"
   end
 
   def with_scope
-    token = Rack::OAuth2::Server::AccessToken.get_token_for("Superman", "oauth-admin", client.id)
+    token = Server::AccessToken.get_token_for("Superman", "oauth-admin", client.id)
     header "Authorization", "OAuth #{token.token}"
   end
 
   def json
     JSON.parse(last_response.body)
+  end
+
+
+  context "force SSL" do
+    setup do
+      Server::Admin.force_ssl = true
+      with_scope
+    end
+
+    context "HTTP request" do
+      setup { get "/oauth/admin/api/clients" }
+
+      should "redirect to HTTPS" do
+        assert_equal 302, last_response.status
+        assert_equal "https://example.org/oauth/admin/api/clients", last_response.location
+      end
+    end
+
+    context "HTTPS request" do
+      setup { get "https://example.org/oauth/admin/api/clients" }
+
+      should "serve request" do
+        assert_equal 200, last_response.status
+        assert Array === json["list"]
+      end
+    end
+
+    teardown { Server::Admin.force_ssl = false }
   end
 
 
@@ -45,7 +73,7 @@ class AdminApiTest < Test::Unit::TestCase
       should_forbid_access
     end
 
-    context "with scope" do
+    context "proper request" do
       setup { with_scope ; get "/oauth/admin/api/clients" }
       should "return OK" do
         assert_equal 200, last_response.status
@@ -56,9 +84,12 @@ class AdminApiTest < Test::Unit::TestCase
       should "return list of clients" do
         assert Array === json["list"]
       end
+      should "return all known scopes" do
+        assert_equal %w{read write}, json["scopes"]
+      end
     end
 
-    context "client" do
+    context "client list" do
       setup do
         with_scope
         get "/oauth/admin/api/clients"
@@ -92,6 +123,9 @@ class AdminApiTest < Test::Unit::TestCase
       should "provide link to revoke resource"do
         assert_equal ["/oauth/admin/api/client", client.id, "revoke"].join("/"), @first["revoke"]
       end
+      should "provide scopes for client" do
+        assert_equal %w{read write}, @first["scopes"]
+      end
       should "tell if not revoked" do
         assert @first["revoked"].nil?
       end
@@ -115,7 +149,7 @@ class AdminApiTest < Test::Unit::TestCase
         tokens = []
         1.upto(10).map do |days|
           Timecop.travel -days*86400 do
-            tokens << Rack::OAuth2::Server::AccessToken.get_token_for("Superman", days.to_s, client.id)
+            tokens << Server::AccessToken.get_token_for("Superman", days.to_s, client.id)
           end
         end
         # Revoke one token today (within past 7 days), one 10 days ago (beyond)

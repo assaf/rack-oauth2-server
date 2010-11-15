@@ -6,7 +6,6 @@ module Rack
       
       class Practice < ::Sinatra::Base
         register Rack::OAuth2::Sinatra
-        oauth.scopes = "nobody sudo"
 
         get "/" do
           <<-HTML

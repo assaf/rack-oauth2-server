@@ -55,11 +55,10 @@ module Rack
       #   query/form parameters.
       # - :realm -- Authorization realm that will show up in 401 responses.
       #   Defaults to use the request host name.
-      # - :scopes -- Array listing all supported scopes, e.g. %w{read write}.
       # - :logger -- The logger to use. Under Rails, defaults to use the Rails
       #   logger.  Will use Rack::Logger if available.
       Options = Struct.new(:access_token_path, :authenticator, :authorization_types,
-        :authorize_path, :database, :host, :param_authentication, :path, :realm, :scopes, :logger)
+        :authorize_path, :database, :host, :param_authentication, :path, :realm, :logger)
 
       def initialize(app, options = Options.new, &authenticator)
         @app = app
@@ -121,9 +120,8 @@ module Rack
             # and return appropriate WWW-Authenticate header.
             response = @app.call(env)
             if response[0] == 403
-              scope = response[1]["oauth.no_scope"] || ""
-              scope = scope.join(" ") if scope.respond_to?(:join)
-              challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scope]
+              scopes = Utils.normalize_scopes(response[1]["oauth.no_scope"])
+              challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scopes.join(" ")]
               response[1]["WWW-Authenticate"] = challenge
               return response
             else
@@ -180,12 +178,10 @@ module Rack
             response_type = request.GET["response_type"].to_s # Need this first, for error handling
             client = get_client(request)
             raise RedirectUriMismatchError unless client.redirect_uri.nil? || client.redirect_uri == redirect_uri.to_s
-            requested_scope = request.GET["scope"].to_s.split.uniq.join(" ")
             raise UnsupportedResponseTypeError unless options.authorization_types.include?(response_type)
-            if scopes = options.scopes
-              allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
-              raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scope.include?(v) }
-            end
+            requested_scope = Utils.normalize_scopes(request.GET["scope"])
+            allowed_scopes = client.scopes
+            raise InvalidScopeError unless (requested_scope - allowed_scopes).empty?
             # Create object to track authorization request and let application
             # handle the rest.
             auth_request = AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
@@ -225,7 +221,7 @@ module Rack
         if auth_request.response_type == "code"
           if auth_request.grant_code
             logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access code #{auth_request.grant_code}" if logger
-            params = { :code=>auth_request.grant_code, :scope=>auth_request.scope, :state=>auth_request.state }
+            params = { :code=>auth_request.grant_code, :scope=>auth_request.scope.join(" "), :state=>auth_request.state }
           else
             logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization" if logger
             params = { :error=>:access_denied, :state=>auth_request.state }
@@ -235,7 +231,7 @@ module Rack
         else # response type if token
           if auth_request.access_token
             logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access token #{auth_request.access_token}" if logger
-            params = { :access_token=>auth_request.access_token, :scope=>auth_request.scope, :state=>auth_request.state }
+            params = { :access_token=>auth_request.access_token, :scope=>auth_request.scope.join(" "), :state=>auth_request.state }
           else
             logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization" if logger
             params = { :error=>:access_denied, :state=>auth_request.state }
@@ -262,20 +258,18 @@ module Rack
             raise UnsupportedGrantType unless options.authenticator
             # 4.1.2.  Resource Owner Password Credentials
             username, password = request.POST.values_at("username", "password")
-            requested_scope = request.POST["scope"].to_s.split.uniq.join(" ")
             raise InvalidGrantError unless username && password
             identity = options.authenticator.call(username, password)
             raise InvalidGrantError unless identity
-            if scopes = options.scopes
-              allowed_scope = scopes.respond_to?(:all?) ? scopes : scopes.split
-              raise InvalidScopeError unless requested_scope.split.all? { |v| allowed_scope.include?(v) }
-            end
-            access_token = AccessToken.get_token_for(identity, requested_scope.to_s, client.id)
+            requested_scope = Utils.normalize_scopes(request.POST["scope"])
+            allowed_scopes = client.scopes
+            raise InvalidScopeError unless (requested_scope - allowed_scopes).empty?
+            access_token = AccessToken.get_token_for(identity, requested_scope, client.id)
           else raise UnsupportedGrantType
           end
           logger.info "Access token #{access_token.token} granted to client #{client.display_name}, identity #{access_token.identity}" if logger
           response = { :access_token=>access_token.token }
-          response[:scope] = access_token.scope unless access_token.scope.empty?
+          response[:scope] = access_token.scope.join(" ")
           return [200, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, response.to_json]
           # 4.3.  Error Response
         rescue OAuthError=>error

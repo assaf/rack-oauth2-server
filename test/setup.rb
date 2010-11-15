@@ -27,7 +27,7 @@ when "sinatra", nil
   class Test::Unit::TestCase
     def app
       Rack::Builder.new do
-        map("/oauth/admin") { run Rack::OAuth2::Server::Admin }
+        map("/oauth/admin") { run Server::Admin }
         map("/") { run MyApp }
       end
     end
@@ -54,11 +54,11 @@ when "rails"
   
     class Test::Unit::TestCase
       def app
-        Rails.application
+        ::Rails.application
       end
 
       def config
-        Rails.configuration.oauth
+        ::Rails.configuration.oauth
       end
     end
 
@@ -76,7 +76,7 @@ when "rails"
       end
 
       def config
-        Rails.configuration.oauth
+        ::Rails.configuration.oauth
       end
     end
   end
@@ -89,18 +89,20 @@ end
 
 class Test::Unit::TestCase
   include Rack::Test::Methods
+  include Rack::OAuth2
 
   def setup
-    Rack::OAuth2::Server.database = DATABASE
-    @client = Rack::OAuth2::Server::Client.create(:display_name=>"UberClient", :redirect_uri=>"http://uberclient.dot/callback")
+    Server.database = DATABASE
+    Server::Admin.scopes = %{read write}
+    @client = Server::Client.create(:display_name=>"UberClient", :redirect_uri=>"http://uberclient.dot/callback", :scopes=>%w{read write})
   end
 
   attr_reader :client, :end_user
 
   def teardown
-    Rack::OAuth2::Server::Client.collection.drop
-    Rack::OAuth2::Server::AuthRequest.collection.drop
-    Rack::OAuth2::Server::AccessGrant.collection.drop
-    Rack::OAuth2::Server::AccessToken.collection.drop
+    Server::Client.collection.drop
+    Server::AuthRequest.collection.drop
+    Server::AccessGrant.collection.drop
+    Server::AccessToken.collection.drop
   end
 end

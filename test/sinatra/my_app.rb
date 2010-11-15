@@ -5,7 +5,6 @@ class MyApp < Sinatra::Base
   set :sessions, true
 
   register Rack::OAuth2::Sinatra
-  oauth.scopes = %w{read write time-travel}
   oauth.authenticator = lambda do |username, password|
     "Batman" if username == "cowbell" && password == "more"
   end

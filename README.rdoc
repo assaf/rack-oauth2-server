@@ -6,7 +6,9 @@ strangers into your app, and OAuth 2.0 is the new awesome.
 http://tools.ietf.org/html/draft-ietf-oauth-v2-10
 
 
-== Step 1: Setup Your Database
+== Adding OAuth 2.0 To Your Application
+
+=== Step 1: Setup Your Database
 
 The authorization server needs to keep track of clients, authorization
 requests, access grants and access tokens. That could only mean one thing: a
@@ -22,7 +24,7 @@ different database engine. All the persistence logic is located in
 support a different database engine, send us a pull request.
 
 
-== Step 2: Use The Server
+=== Step 2: Use The Server
 
 For Rails 2.3.x, Rack::OAuth2::Server automatically adds itself as middleware
 when required, but you do need to configure it from within
@@ -79,7 +81,6 @@ The configuration options are:
   parameters.
 - +:realm+ -- Authorization realm that will show up in 401 responses. Defaults
   to use the request host name.
-- +:scopes+ -- Array listing all supported scopes, e.g. ["read", "write"].
 - +:logger+ -- The logger to use. Under Rails, defaults to use the Rails
   logger.  Will use +Rack::Logger+ if available.
 
@@ -90,7 +91,7 @@ authenticator. This feature is necessary for some client applications, and
 quite handy during development/testing.
 
 
-== Step 3: Let Users Authorize
+=== Step 3: Let Users Authorize
 
 Authorization requests go to +/oauth/authorize+. Rack::OAuth2::Server
 intercepts these requests and validates the client ID, secret, redirect URI,
@@ -171,7 +172,7 @@ The view would look something like this:
   </form>
 
 
-== Step 4: Protect Your Path
+=== Step 4: Protect Your Path
 
 Rack::OAuth2::Server intercepts all incoming requests and looks for an
 Authorization header that uses OAuth authentication scheme, like so:
@@ -268,7 +269,7 @@ In Sinatra/Padrino, it would look something like this:
   end
 
 
-== Step 5: Register Some Clients
+=== Step 5: Register Some Clients
 
 Before a client application can request access, there must be a client record
 in the database. Registration provides the client application with a client
@@ -300,12 +301,95 @@ Programatically, registering a new client is as simple as:
   > puts "Your client secret: #{client.secret}"
 
 
-== Step 6: Pimp Your API
+=== Step 6: Pimp Your API
 
 I'll let you figure that one for yourself.
 
 
-== Using With Curl
+== OAuth Web Admin
+
+We haz it, and it's pretty rad:
+
+http://github.com/downloads/flowtown/rack-oauth2-server/OAuth%20Console%20-%20All%20Clients.png
+
+To get the Web admin running, you'll need to do the following. First, you'll
+need to register a new client application that can access the OAuth Web admin,
+with the scope +oauth-scope+ and redirect_uri that points to where you plan the
+Web admin to live. This URL must end with "/admin", for example,
+"http://example.com/oauth/admin".
+
+The easiest way to do this is to run the +oauth2-sever+ command line tool:
+
+  $ oauth2-server setup --db my_db
+
+Next, in your application, make sure to ONLY AUTHORIZE ADMINISTRATORS to access
+the Web admin, by granting them access to the +oauth-admin+ scope. For example:
+
+  def grant
+    # Only admins allowed to authorize the scope oauth-admin
+    if oauth.scope.include?("oauth-admin") && !current_user.admin?
+      head oauth.deny!
+    else
+      head oauth.grant!(current_user.id)
+    end
+  end
+
+Make sure you do that, or you'll allow anyone access to the OAuth Web admin.
+
+Next, mount the OAuth Web admin as part of your application, and feed it the
+client ID/secret. For example, for Rails add this to +config/environment.rb+:
+
+  Rails::Initializer.run do |config|
+    . . .
+    config.after_initialize do
+      config.middleware.use Rack::OAuth2::Server::Admin.mount
+      Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
+      Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
+      Rack::OAuth2::Server::Admin.set :scopes, %w{read write}
+    end
+  end
+
+For Sinatra, Padrino and other Rack-based applications, you'll want to mount
+like so (e.g. in +config.ru+):
+
+  Rack::Builder.new do
+    map("/oauth/admin") { run Rack::OAuth2::Server::Admin }
+    map("/") { run MyApp }
+  end
+  Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
+  Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
+  Rack::OAuth2::Server::Admin.set :scopes, %w{read write}
+
+Next, open your browser to http://example.com/oauth/admin, or wherever you
+mounted the Web admin.
+
+=== Web Admin Options
+
+You can set the following options:
+
+- +client_id+ -- Client application identified, require to authenticate.
+- +client_secret+ -- Client application secret, required to authenticate.
+- +authorize+ -- Endpoint for requesing authorization, defaults to /oauth/admin.
+- +template_url+ -- Will map an access token identity into a URL in your
+  application, using the substitution value "{id}", e.g.
+  "http://example.com/users/#{id}")
+- +force_ssl+ -- Forces all requests to use HTTPS (true by default except in
+  development mode).
+- +scopes+ -- Common scopes shown and added by default to new clients.
+ 
+== Web Admin API
+
+The OAuth Web admin is a single-page client application that operates by
+accessing the OAuth API. The API is mounted at /oauth/admin/api (basically /api
+relative to the UI), you can access it yourself if you have an access token with
+the scope +oauth-admin+.
+
+The API is undocumented, but between the very simple Sinatra code that provides
+he API, and just as simple Sammy.js code that consumes it, it should be easy to
+piece together.
+
+
+== OAuth 2.0 With Curl
 
 The premise of OAuth 2.0 is that you can use it straight from the command line.
 Let's start by creating an access token. Aside from the UI authorization flow,
@@ -353,72 +437,6 @@ If you create +.curlrc+ in your home directory, +curl+ will automatically load i
 Convenient, but dangerous, you might end up sending the access token to any
 server you +curl+. Useful for development, testing, just don't use it with any
 production access tokens.
-
-
-== OAuth Web Console
-
-We haz it, and it's pretty rad:
-
-http://github.com/downloads/flowtown/rack-oauth2-server/OAuth%20Console%20-%20All%20Clients.png
-
-To get the console running, you'll need to do the following. First, you'll need
-to register a new client application that can access the OAuth console, with a
-redirect_uri that points to where you plan the Web console to live. This URL
-must end with "/admin", for example, "http://example.com/oauth/admin".
-
-The easiest way to do this is to run the +oauth2-sever+ command line tool:
-
-  $ oauth2-server setup --db my_db
-
-Next, in your application, make sure to ONLY AUTHORIZE ADMINISTRATORS to access
-the console, by granting them access to the +oauth-admin+ scope. For example:
-
-  def authorize
-    # Only admins allowed to authorize the scope oauth-admin
-    head oauth.deny! if oauth.scope.include?("oauth-admin") && !current_user.admin?
-  end
-
-Make sure you do that, or you'll allow anyone access to the OAuth Web console.
-
-Next, mount the OAuth Web console as part of your application, and feed it the
-client ID/secret. For example, for Rails add this to +config/environment.rb+:
-
-  Rails::Initializer.run do |config|
-    . . .
-    config.after_initialize do
-      config.middleware.use Rack::OAuth2::Server::Admin.mount
-      Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
-      Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
-    end
-  end
-
-For Sinatra, Padrino and other Rack-based applications, you'll want to mount
-like so (e.g. in +config.ru+):
-
-  Rack::Builder.new do
-    map("/oauth/admin") { run Rack::OAuth2::Server::Admin }
-    map("/") { run MyApp }
-  end
-  Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
-  Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
-
-Next, open your browser to http://example.com/oauth/admin, or wherever you
-mounted the console.
-
-Another option, +template_url+ allows you to link access token identities to
-URLs in your application, using the substitution variable "{id}". For example:
-
-  Rack::OAuth2::Server::Admin.set :template_url, "https://example.com/accounts/{id}"
-
-The OAuth Web console is a single-page client application that operates by
-accessing the OAuth API. The API is mounted at /oauth/admin/api (basically /api
-relative to the console), you can access it yourself if you have an access
-token with the scope +oauth-admin+.
-
-To get the access token, the console first redirects you to the path
-+/oauth/authorize+, which it expects to be the OAuth 2.0 authorization
-endpoint. If you need to use a different endpoint, simply set the :authorize
-option to that URL.
 
 
 == Mandatory ASCII Diagram

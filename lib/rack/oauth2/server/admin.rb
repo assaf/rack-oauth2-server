@@ -47,7 +47,7 @@ module Rack
           # /oauth/admin
           # @return [Object] Rack module
           #
-          # @example To include admin console in Rails 2.x app
+          # @example To include Web admin in Rails 2.x app:
           #   config.middleware.use Rack::OAuth2::Server::Admin.mount
           def mount(path = "/oauth/admin")
             mount = Class.new(Mount)
@@ -57,16 +57,22 @@ module Rack
 
         end
 
-        # Need client ID to get access token to access this console.
+
+        # Client application identified, require to authenticate.
         set :client_id, nil
-        # Need client secret to get access token to access this console.
+        # Client application secret, required to authenticate.
         set :client_secret, nil
-        # Use this URL to authorize access to this console. If not set, goes to
-        # /oauth/authorize.
+        # Endpoint for requesing authorization, defaults to /oauth/admin.
         set :authorize, nil
-        # Map access token identity to URL on your application, by replacing
-        # "{id}" with the token identity (e.g. "http://example.com/user/{id}")
+        # Will map an access token identity into a URL in your application,
+        # using the substitution value "{id}", e.g.
+        # "http://example.com/users/#{id}")
         set :template_url, nil
+        # Forces all requests to use HTTPS (true by default except in
+        # development mode).
+        set :force_ssl, !development?
+        # Common scopes shown and added by default to new clients.
+        set :scopes, []
 
         # Number of tokens to return in each page.
         set :tokens_per_page, 100
@@ -79,7 +85,7 @@ module Rack
 
         # Force HTTPS except for development environment.
         before do
-          redirect request.url.sub(/^http:/, "https:") unless request.scheme == "https" || settings.development?
+          redirect request.url.sub(/^http:/, "https:") if settings.force_ssl && request.scheme != "https"
         end
 
 
@@ -121,7 +127,7 @@ module Rack
         get "/api/clients" do
           content_type "application/json"
           json = { :list=>Server::Client.all.map { |client| client_as_json(client) },
-                   :scopes=>Server::Utils.normalize_scopes(settings.oauth.scopes),
+                   :scopes=>Server::Utils.normalize_scopes(settings.scopes),
                    :tokens=>{ :total=>Server::AccessToken.count, :week=>Server::AccessToken.count(:days=>7),
                               :revoked=>Server::AccessToken.count(:days=>7, :revoked=>true) } }
           json.to_json

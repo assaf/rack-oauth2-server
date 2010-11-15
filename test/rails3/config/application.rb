@@ -7,7 +7,6 @@ module MyApp
 
     config.after_initialize do
       config.oauth.database = DATABASE
-      config.oauth.scopes = %w{read write time-travel}
       config.oauth.host = "example.org"
       config.oauth.authenticator = lambda do |username, password|
         "Batman" if username == "cowbell" && password == "more"

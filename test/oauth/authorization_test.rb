@@ -121,13 +121,6 @@ class AuthorizationTest < Test::Unit::TestCase
     should_redirect_with_error :invalid_scope
   end
 
-  context "immediately denied" do
-    setup do
-      request_authorization :scope=>"time-travel"
-    end
-    should_redirect_with_error :access_denied
-  end
-
 
   # 3.1.  Authorization Response
   

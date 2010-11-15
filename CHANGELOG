@@ -1,5 +1,12 @@
 2010-11-15 version 1.5.0
 
+Major change: you are no longer able to get an access token with the scope if
+the client is not registered to have this scope. The global setting scopes is
+gone (not backward compatible). You will need to manually add scopes to your
+clients, e.g. in mogno console:
+
+  db.oauth2.clients.update({}, { $set: { scopes: ["read", "write"] } }, true, true)
+
 Web console now allows you to set/unset individual scopes for each client
 application.
 

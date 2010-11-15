@@ -42,7 +42,7 @@ when "register"
     print "Redirect URI:\t\t"
     redirect_uri = $stdin.gets
     print "Scopes (space separated):\t\t"
-    scopes = $stdin.gets.split
+    scopes = Server::Utils.normalize_scopes($stdin.gets)
     client = Server::Client.create(:display_name=>display_name, :link=>link, :redirect_uri=>redirect_uri, :scopes=>scopes)
   rescue
     puts "\nFailed to register client: #{$!}"
@@ -124,7 +124,7 @@ when "practice"
   end
   Server::Admin.set :client_id, client.id
   Server::Admin.set :client_secret, client.secret
-  Server::Admin.oauth.scopes = "nobody sudo"
+  Server::Admin.set :scopes, "nobody sudo"
 
   print "\nFiring up the practice server.\nFor instructions, go to http://localhost:#{port}/\n\n\n"
   Thin::Server.new "127.0.0.1", port  do

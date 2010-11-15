@@ -49,7 +49,7 @@ class AccessGrantTest < Test::Unit::TestCase
         assert_match /[a-f0-9]{32}/i, JSON.parse(last_response.body)["access_token"]
       end
       should "response with scope" do
-        assert_equal scope, JSON.parse(last_response.body)["scope"]
+        assert_equal scope || "", JSON.parse(last_response.body)["scope"]
       end
     end
 

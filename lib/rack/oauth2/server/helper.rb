@@ -54,9 +54,9 @@ module Rack
         # @return [Array<String>, nil] Scope names, e.g ["read, "write"]
         def scope
           if access_token
-            @scope ||= Server.get_access_token(access_token).scope.split
+            @scope ||= Server::Utils.normalize_scopes(Server.get_access_token(access_token).scope)
           elsif authorization
-            @scope ||= Server.get_auth_request(authorization).scope.split
+            @scope ||= Server::Utils.normalize_scopes(Server.get_auth_request(authorization).scope)
           end
         end
 
