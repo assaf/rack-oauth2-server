@@ -1,8 +1,8 @@
+require "rack"
 require "rack/oauth2/models"
 require "rack/oauth2/server/errors"
 require "rack/oauth2/server/utils"
 require "rack/oauth2/server/helper"
-require "rack/oauth2/admin"
 
 
 module Rack
@@ -13,9 +13,6 @@ module Rack
 
       # Same as gem version number.
       VERSION = IO.read(::File.expand_path("../../../VERSION", ::File.dirname(__FILE__)))
-
-      # Backward compatible.
-      Admin = Rack::OAuth2::Admin
 
       class << self
         # Return AuthRequest from authorization request handle.

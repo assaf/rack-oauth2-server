@@ -27,6 +27,12 @@ label {
 label input, label textarea, label select {
   display: block;
 }
+label.check {
+  font-weight: normal;
+}
+label.check input {
+  display: inline;
+}
 label input, label textarea {
   font-size: 12pt;
   line-height: 1.3em;
@@ -270,14 +276,28 @@ table.tokens td.scope {
   padding: 1em;
   border: 1px solid #eee;
 }
-.client.new>#image, .client.edit>#image {
+.client .fields>#image {
   float: left;
-  margin: 0 12px 0 0;
+  margin: 0.5em 12px 0 0;
   width: 48px;
   height: 48px;
 }
-.client.new>*, .client.edit>* {
+.client .fields>* {
   margin-left: 60px;
+}
+.client .fields {
+  float: left;
+}
+.client .scopes {
+  float: right;
+}
+.client .scopes .non-common {
+  color: red;
+}
+.client hr {
+  clear: both;
+  border: none;
+  margin: 1em;
 }
 
 .no-access {

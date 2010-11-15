@@ -17,6 +17,7 @@ module Rack
           # # :link -- Link to client Web site (e.g. http://uberclient.dot)
           # # :image_url -- URL of image to show alongside display name
           # # :redirect_uri -- Registered redirect URI.
+          # # :scopes -- List of scopes the client is allowed to request.
           # 
           # This method does not validate any of these fields, in fact, you're
           # not required to set them, use them, or use them as suggested. Using
@@ -24,9 +25,10 @@ module Rack
           # how we learned that.
           def create(args)
             redirect_uri = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
+            scopes = Server::Utils.normalize_scopes(args[:scopes])
             fields =  { :secret=>Server.secure_random, :display_name=>args[:display_name], :link=>args[:link],
-                        :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :created_at=>Time.now.utc.to_i,
-                        :revoked=>nil }
+                        :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :scopes=>scopes,
+                        :created_at=>Time.now.utc.to_i, :revoked=>nil }
             fields[:_id] = collection.insert(fields)
             Server.new_instance self, fields
           end
@@ -73,6 +75,8 @@ module Rack
         # Redirect URL. Supplied by the client if they want to restrict redirect
         # URLs (better security).
         attr_reader :redirect_uri
+        # List of scopes the client is allowed to request.
+        attr_reader :scopes
         # Does what it says on the label.
         attr_reader :created_at
         # Timestamp if revoked.
@@ -91,6 +95,7 @@ module Rack
         def update(args)
           fields = [:display_name, :link, :image_url].inject({}) { |h,k| v = args[k]; h[k] = v if v; h }
           fields[:redirect_uri] = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
+          fields[:scopes] = Server::Utils.normalize_scopes(args[:scopes])
           self.class.collection.update({ :_id=>id }, { :$set=>fields })
         end
 

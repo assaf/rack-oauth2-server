@@ -1,12 +1,15 @@
+require "rack/oauth2/server/admin"
+
 module Rack
   module OAuth2
+    class Server
       
-    class Practice < ::Sinatra::Base
-      register Rack::OAuth2::Sinatra
-      oauth.scopes = "nobody sudo oauth-admin"
+      class Practice < ::Sinatra::Base
+        register Rack::OAuth2::Sinatra
+        oauth.scopes = "nobody sudo"
 
-      get "/" do
-        <<-HTML
+        get "/" do
+          <<-HTML
 <h1>Welcome to OAuth 2.0 Practice Server</h1>
 <p>This practice server is for testing your OAuth 2.0 client library.</p>
 <dl>
@@ -21,13 +24,13 @@ module Rack
 </dl>
 <p>The scopes are "nobody", "sudo" and "oauth-admin".</p>
 <p>You can manage client applications and tokens from the <a href="/oauth/admin">OAuth console</a>.</p>
-        HTML
-      end
+          HTML
+        end
 
-      # -- Simple authorization --
+        # -- Simple authorization --
 
-      get "/oauth/authorize" do
-        <<-HTML
+        get "/oauth/authorize" do
+          <<-HTML
 <h1><a href="#{oauth.client.link}">#{oauth.client.display_name}</a> wants to access your account with the scope #{oauth.scope.join(", ")}</h1>
 <form action="/oauth/grant" method="post" style="display:inline-block">
   <button>Grant</button>
@@ -37,25 +40,26 @@ module Rack
   <button>Deny</button>
   <input type="hidden" name="authorization" value="#{oauth.authorization}">
 </form>
-        HTML
-      end
-      post "/oauth/grant" do
-        oauth.grant! "Superman"
-      end
-      post "/oauth/deny" do
-        oauth.deny!
-      end
+          HTML
+        end
+        post "/oauth/grant" do
+          oauth.grant! "Superman"
+        end
+        post "/oauth/deny" do
+          oauth.deny!
+        end
 
-      # -- Protected resources --
+        # -- Protected resources --
 
-      oauth_required "/secret"
-      get "/private" do
-        "You're awesome!"
-      end
+        oauth_required "/secret"
+        get "/private" do
+          "You're awesome!"
+        end
 
-      oauth_required "/make", :scope=>"sudo"
-      get "/write" do
-        "Sandwhich"
+        oauth_required "/make", :scope=>"sudo"
+        get "/write" do
+          "Sandwhich"
+        end
       end
     end
   end

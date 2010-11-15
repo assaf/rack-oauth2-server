@@ -7,6 +7,6 @@ MyApp::Application.routes.draw do
   # Resources we want to protect
   match ":action"=>"api"
 
-  mount Rack::OAuth2::Admin, :at=>"oauth/admin"
+  mount Rack::OAuth2::Server::Admin, :at=>"oauth/admin"
 
 end

@@ -1,8 +1,15 @@
+2010-11-15 version 1.5.0
+
+Web console now allows you to set/unset individual scopes for each client
+application.
+
+Added Sammy.js OAuth 2.0 plugin.
+
+
 2010-11-12 version 1.4.6
 
 Added Railtie support for Rails 3.x and now running tests against both Rails
 2.x and 3.x.
-
 
 
 2010-11-11 version 1.4.5

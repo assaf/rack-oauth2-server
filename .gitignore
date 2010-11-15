@@ -5,4 +5,4 @@ doc
 *.gem
 test/rails/log
 *.lock
-**/log/test.log
+test/*/log/test.log

@@ -386,9 +386,9 @@ client ID/secret. For example, for Rails add this to +config/environment.rb+:
   Rails::Initializer.run do |config|
     . . .
     config.after_initialize do
-      config.middleware.use Rack::OAuth2::Admin.mount
-      Rack::OAuth2::Admin.set :client_id, "4dca20453e4859cb000007"
-      Rack::OAuth2::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
+      config.middleware.use Rack::OAuth2::Server::Admin.mount
+      Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
+      Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
     end
   end
 
@@ -396,11 +396,11 @@ For Sinatra, Padrino and other Rack-based applications, you'll want to mount
 like so (e.g. in +config.ru+):
 
   Rack::Builder.new do
-    map("/oauth/admin") { run Rack::OAuth2::Admin }
+    map("/oauth/admin") { run Rack::OAuth2::Server::Admin }
     map("/") { run MyApp }
   end
-  Rack::OAuth2::Admin.set :client_id, "4dca20453e4859cb000007"
-  Rack::OAuth2::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
+  Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
+  Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
 
 Next, open your browser to http://example.com/oauth/admin, or wherever you
 mounted the console.
@@ -408,7 +408,7 @@ mounted the console.
 Another option, +template_url+ allows you to link access token identities to
 URLs in your application, using the substitution variable "{id}". For example:
 
-  Rack::OAuth2::Admin.set :template_url, "https://example.com/accounts/{id}"
+  Rack::OAuth2::Server::Admin.set :template_url, "https://example.com/accounts/{id}"
 
 The OAuth Web console is a single-page client application that operates by
 accessing the OAuth API. The API is mounted at /oauth/admin/api (basically /api
