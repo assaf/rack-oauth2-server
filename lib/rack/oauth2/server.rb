@@ -163,6 +163,12 @@ module Rack
             end
             response_type = auth_request.response_type # Needed for error handling
             client = self.class.get_client(auth_request.client_id)
+            # Pass back to application, watch for 403 (deny!)
+            logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope}" if logger
+            request.env["oauth.authorization"] = auth_request.id.to_s
+            response = @app.call(request.env)
+            raise AccessDeniedError if response[0] == 403
+            return response
 
           else
 
@@ -185,13 +191,10 @@ module Rack
             # Create object to track authorization request and let application
             # handle the rest.
             auth_request = AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
-            request.env["oauth.authorization"] = auth_request.id.to_s
+            uri = URI.parse(request.url)
+            uri.query = "authorization=#{auth_request.id.to_s}"
+            return [303, { "Location"=>uri.to_s }, []]
           end
-          # Pass back to application, watch for 403 (deny!)
-          logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope}" if logger
-          response = @app.call(request.env)
-          raise AccessDeniedError if response[0] == 403
-          return response
         rescue OAuthError=>error
           logger.error "Authorization request error: #{error.code} #{error.message}" if logger
           params = { :error=>error.code, :error_description=>error.message, :state=>state }

@@ -42,6 +42,7 @@ class AuthorizationTest < Test::Unit::TestCase
 
   def request_authorization(changes = nil)
     get "/oauth/authorize?" + Rack::Utils.build_query(@params.merge(changes || {}))
+    get last_response["Location"] if last_response.status == 303
   end
 
   def authorization
