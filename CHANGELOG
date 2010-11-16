@@ -1,4 +1,4 @@
-2010-11-15 version 2.0.0
+2010-11-16 version 2.0.0
 
 Major change: you are no longer able to get an access token with the scope if
 the client is not registered to have this scope. The global setting scopes is
