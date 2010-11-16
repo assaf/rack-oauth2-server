@@ -48,12 +48,15 @@ module Rack
           # @option filter [String, ObjectId] client_id Only tokens grant to this client
           def count(filter = {})
             select = {}
-            if filter[:days]
-              now = Time.now.utc.to_i
-              select[:created_at] = { :$gt=>now - filter[:days] * 86400, :$lte=>now }
-            end
+            now = Time.now.utc.to_i
             if filter.has_key?(:revoked)
-              select[:revoked] = filter[:revoked] ? { :$ne=>nil } : { :$eq=>nil }
+              if filter[:days]
+                select[:revoked] = { :$gt=>now - filter[:days] * 86400, :$lte=>now }
+              else
+                select[:revoked] = filter[:revoked] ? { :$ne=>nil } : { :$eq=>nil }
+              end
+            elsif filter[:days]
+              select[:created_at] = { :$gt=>now - filter[:days] * 86400, :$lte=>now }
             end
             if filter[:client_id]
               select[:client_id] = BSON::ObjectId(filter[:client_id].to_s)
