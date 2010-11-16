@@ -68,8 +68,9 @@ module Rack
             if filter[:client_id]
               select[:client_id] = BSON::ObjectId(filter[:client_id].to_s)
             end
-            Server::AccessToken.collection.group "function (token) { return { ts: Math.floor(token.created_at / 86400) } }",
-              select, { :granted=>0 }, "function (token, state) { state.granted++ }"
+            raw = Server::AccessToken.collection.group("function (token) { return { ts: Math.floor(token.created_at / 86400) } }",
+              select, { :granted=>0 }, "function (token, state) { state.granted++ }")
+            raw.sort { |a, b| a["ts"] - b["ts"] }
           end
 
           def collection

@@ -257,7 +257,7 @@ module Rack
             auth_request = AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
             uri = URI.parse(request.url)
             uri.query = "authorization=#{auth_request.id.to_s}"
-            return [303, { "Location"=>uri.to_s }, []]
+            return [303, { "Location"=>uri.to_s }, ["You are being redirected"]]
           end
         rescue OAuthError=>error
           logger.error "Authorization request error: #{error.code} #{error.message}" if logger
@@ -332,7 +332,8 @@ module Rack
             allowed_scopes = client.scopes
             raise InvalidScopeError unless (requested_scope - allowed_scopes).empty?
             access_token = AccessToken.get_token_for(identity, client.id, requested_scope)
-          else raise UnsupportedGrantType
+          else
+            raise UnsupportedGrantType
           end
           logger.info "Access token #{access_token.token} granted to client #{client.display_name}, identity #{access_token.identity}" if logger
           response = { :access_token=>access_token.token }
@@ -368,7 +369,7 @@ module Rack
 
       # Rack redirect response. The argument is typically a URI object.
       def redirect_to(uri)
-        return [302, { "Location"=>uri.to_s }, []]
+        return [302, { "Location"=>uri.to_s }, ["You are being redirected"]]
       end
 
       def bad_request(message)
@@ -379,7 +380,7 @@ module Rack
       def unauthorized(request, error = nil)
         challenge = 'OAuth realm="%s"' % (options.realm || request.host)
         challenge << ', error="%s", error_description="%s"' % [error.code, error.message] if error
-        return [401, { "WWW-Authenticate"=>challenge }, []]
+        return [401, { "WWW-Authenticate"=>challenge }, [error.message]]
       end
 
       # Wraps Rack::Request to expose Basic and OAuth authentication
