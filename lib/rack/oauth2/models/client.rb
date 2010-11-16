@@ -30,8 +30,8 @@ module Rack
                         :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :scopes=>scopes,
                         :created_at=>Time.now.utc.to_i, :revoked=>nil }
             if args[:id] && args[:secret]
-              fields[:_id], fields[:secret] = args[:id], args[:secret]
-              collection.insert(fields)
+              fields[:_id], fields[:secret] = BSON::ObjectId(args[:id].to_s), args[:secret]
+              collection.insert(fields, :safe=>true)
             else
               fields[:secret] = Server.secure_random
               fields[:_id] = collection.insert(fields)
@@ -103,6 +103,7 @@ module Rack
           fields[:redirect_uri] = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
           fields[:scopes] = Server::Utils.normalize_scopes(args[:scopes])
           self.class.collection.update({ :_id=>id }, { :$set=>fields })
+          self.class.find(id)
         end
 
         Server.create_indexes do

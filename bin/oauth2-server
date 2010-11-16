@@ -42,8 +42,8 @@ when "register"
     print "Redirect URI:\t\t"
     redirect_uri = $stdin.gets
     print "Scopes (space separated):\t\t"
-    scopes = Server::Utils.normalize_scopes($stdin.gets)
-    client = Server::Client.create(:display_name=>display_name, :link=>link, :redirect_uri=>redirect_uri, :scopes=>scopes)
+    scopes = $stdin.gets
+    client = Server.register(:display_name=>display_name, :link=>link, :redirect_uri=>redirect_uri, :scopes=>scopes)
   rescue
     puts "\nFailed to register client: #{$!}"
     exit -1
@@ -62,8 +62,8 @@ when "setup"
     uri.normalize!
     fail "No an HTTP/S URL" unless uri.absolute? && %{http https}.include?(uri.scheme)
     fail "Path must end with /admin" unless uri.path[/\/admin$/]
-    client = Server::Client.create(:display_name=>"OAuth Console", :link=>uri.to_s, :image_url=>"#{uri.to_s}/images/oauth-2.png",
-                                   :redirect_uri=>uri.to_s, :scopes=>"oauth-admin")
+    client = Server.register(:display_name=>"OAuth Console", :link=>uri.to_s, :image_url=>"#{uri.to_s}/images/oauth-2.png",
+                             :redirect_uri=>uri.to_s, :scopes=>"oauth-admin")
   rescue
     puts "\nFailed to register client: #{$!}"
     exit -1
@@ -130,8 +130,8 @@ when "practice"
   port ||= 8080
   admin_url = "http://localhost:#{port}/oauth/admin"
   unless client = Server::Client.lookup(admin_url)
-    client = Server::Client.create(:display_name=>"Practice OAuth Console", :image_url=>"#{admin_url}/images/oauth-2.png",
-                                   :link=>admin_url, :redirect_uri=>admin_url, :scopes=>"oauth-admin")
+    client = Server.register(:display_name=>"Practice OAuth Console", :image_url=>"#{admin_url}/images/oauth-2.png",
+                             :link=>admin_url, :redirect_uri=>admin_url, :scopes=>"oauth-admin")
   end
   Server::Admin.set :client_id, client.id
   Server::Admin.set :client_secret, client.secret

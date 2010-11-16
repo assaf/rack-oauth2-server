@@ -83,7 +83,7 @@ class ServerTest < Test::Unit::TestCase
         end
 
         should "should assign it the client identifier" do
-          assert_equal "4ce24c423321e88ac5000015", @client.id
+          assert_equal "4ce24c423321e88ac5000015", @client.id.to_s
         end
 
         should "should assign it the client secret" do
@@ -106,7 +106,7 @@ class ServerTest < Test::Unit::TestCase
         end
 
         should "should not change the client identifier" do
-          assert_equal "4ce24c423321e88ac5000015", @client.id
+          assert_equal "4ce24c423321e88ac5000015", @client.id.to_s
         end
 
         should "should not change the client secret" do
@@ -124,7 +124,9 @@ class ServerTest < Test::Unit::TestCase
         end
 
         should "raise error" do
-          Server.register(:id=>"4ce24c423321e88ac5000015", :secret=>"wrong", :display_name=>"MyApp")
+          assert_raises RuntimeError do
+            Server.register(:id=>"4ce24c423321e88ac5000015", :secret=>"wrong", :display_name=>"MyApp")
+          end
         end
       end
 
