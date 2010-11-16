@@ -74,6 +74,8 @@ module Rack
         # Common scopes shown and added by default to new clients.
         set :scopes, []
 
+
+        set :logger, defined?(::Rails) && ::Rails.logger
         # Number of tokens to return in each page.
         set :tokens_per_page, 100
         set :public, ::File.dirname(__FILE__) + "/../admin"

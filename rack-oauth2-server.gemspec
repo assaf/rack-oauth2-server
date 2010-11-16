@@ -17,6 +17,7 @@ Gem::Specification.new do |spec|
   spec.extra_rdoc_files = "README.rdoc", "CHANGELOG"
   spec.rdoc_options     = "--title", "rack-oauth2-server #{spec.version}", "--main", "README.rdoc",
                           "--webcvs", "http://github.com/assaf/#{spec.name}"
+  spec.license          = "MIT"
 
   spec.required_ruby_version = '>= 1.8.7'
   spec.add_dependency "rack", "~>1.1"

@@ -26,16 +26,14 @@ support a different database engine, send us a pull request.
 
 === Step 2: Use The Server
 
-For Rails 2.3.x, Rack::OAuth2::Server automatically adds itself as middleware
+For Rails 2.3/3.0, Rack::OAuth2::Server automatically adds itself as middleware
 when required, but you do need to configure it from within
-+config/environment.rb+ (or one of the specific environment files). For
-example:
++config/environment.rb+ (or one of the specific environment files). For example:
 
   Rails::Initializer.run do |config|
     . . .
     config.after_initialize do
       config.oauth.database = Mongo::Connection.new["my_db"]
-      config.oauth.scopes = %w{read write}
       config.oauth.authenticator = lambda do |username, password|
         user = User.find(username)
         user if user && user.authenticated?(password)
@@ -296,6 +294,7 @@ Programatically, registering a new client is as simple as:
   > uber_client = Rack::OAuth2::Server::Client.create(:display_name=>"UberClient",
      :link=>"http://uberclient.dot/",
      :image_url=>"http://farm5.static.flickr.com/4122/4890273282_58f7c345f4.jpg",
+     :scopes=>%{read write},
      :redirect_uri=>"http://uberclient.dot/oauth/callback")
   > puts "Your client identifier: #{client.id}"
   > puts "Your client secret: #{client.secret}"
@@ -337,7 +336,8 @@ the Web admin, by granting them access to the +oauth-admin+ scope. For example:
 Make sure you do that, or you'll allow anyone access to the OAuth Web admin.
 
 Next, mount the OAuth Web admin as part of your application, and feed it the
-client ID/secret. For example, for Rails add this to +config/environment.rb+:
+client ID/secret. For example, for Rails 2.3.x add this to
++config/environment.rb+:
 
   Rails::Initializer.run do |config|
     . . .
@@ -348,6 +348,22 @@ client ID/secret. For example, for Rails add this to +config/environment.rb+:
       Rack::OAuth2::Server::Admin.set :scopes, %w{read write}
     end
   end
+
+For Rails 3.0.x, add this to you +config/application.rb+:
+
+  module MyApp
+    class Application < Rails::Application
+      config.after_initialize do
+        Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
+        Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
+        Rack::OAuth2::Server::Admin.set :scopes, %w{read write}
+      end
+    end
+  end
+
+And add the follownig to +config/routes.rb+:
+
+  mount Rack::OAuth2::Server::Admin=>"/oauth/admin"
 
 For Sinatra, Padrino and other Rack-based applications, you'll want to mount
 like so (e.g. in +config.ru+):
@@ -409,8 +425,8 @@ username/password, e.g.:
 
 This will spit out a JSON document, something like this:
 
-  {"scope":"import discover contacts lists",
-    "access_token":"e57807eb99f8c29f60a27a75a80fec6e"}
+  { "scope":"import discover contacts lists",
+    "access_token":"e57807eb99f8c29f60a27a75a80fec6e" }
 
 Grab the +access_token+ value and use it. The access token is good until you
 delete it from the database. Making a request using the access token:

@@ -12,7 +12,7 @@ module Rack
     class Server
 
       # Same as gem version number.
-      VERSION = IO.read(::File.expand_path("../../../VERSION", ::File.dirname(__FILE__)))
+      VERSION = IO.read(::File.expand_path("../../../VERSION", ::File.dirname(__FILE__))).strip
 
       class << self
         # Return AuthRequest from authorization request handle.

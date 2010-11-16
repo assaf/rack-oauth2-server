@@ -89,6 +89,17 @@ Rails 2.x, add the following to config/environment.rb:
     Rack::OAuth2::Server::Admin.set :client_secret, "#{client.secret}"
   end
 
+Rails 3.x, add the following to config/application.rb:
+
+  config.after_initialize do
+    Rack::OAuth2::Server::Admin.set :client_id, "#{client.id}"
+    Rack::OAuth2::Server::Admin.set :client_secret, "#{client.secret}"
+  end
+
+And add the follownig to config/routes.rb:
+
+  mount Rack::OAuth2::Server::Admin=>"/oauth/admin"
+
 Sinatra, Padrino and other Rack applications, mount the console:
 
   Rack::Builder.new do
@@ -136,6 +147,7 @@ else
 
   print <<-TEXT
 Usage: oauth2-server [options] COMMAND [args]
+Version #{Server::VERSION}
 
 Commands:
   list            Lists all active clients
