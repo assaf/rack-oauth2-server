@@ -61,6 +61,17 @@ module Rack
             collection.find(select).count
           end
 
+          def historical(filter = {})
+            days = filter[:days] || 60
+            select = { :$gt=> { :created_at=>Time.now - 86400 * days } }
+            select = {}
+            if filter[:client_id]
+              select[:client_id] = BSON::ObjectId(filter[:client_id].to_s)
+            end
+            Server::AccessToken.collection.group "function (token) { return { ts: Math.floor(token.created_at / 86400) } }",
+              select, { :granted=>0 }, "function (token, state) { state.granted++ }"
+          end
+
           def collection
             Server.database["oauth2.access_tokens"]
           end

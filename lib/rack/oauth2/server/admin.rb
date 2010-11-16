@@ -130,9 +130,15 @@ module Rack
           content_type "application/json"
           json = { :list=>Server::Client.all.map { |client| client_as_json(client) },
                    :scopes=>Server::Utils.normalize_scopes(settings.scopes),
+                   :history=>"#{request.script_name}/api/clients/history",
                    :tokens=>{ :total=>Server::AccessToken.count, :week=>Server::AccessToken.count(:days=>7),
                               :revoked=>Server::AccessToken.count(:days=>7, :revoked=>true) } }
           json.to_json
+        end
+
+        get "/api/clients/history" do
+          content_type "application/json"
+          { :data=>Server::AccessToken.historical }.to_json
         end
 
         post "/api/clients" do
@@ -163,6 +169,12 @@ module Rack
           json[:tokens][:revoked] = Server::AccessToken.count(:client_id=>client.id, :days=>7, :revoked=>true)
 
           json.to_json
+        end
+
+        get "/api/client/:id/history" do
+          content_type "application/json"
+          client = Server::Client.find(params[:id])
+          { :data=>Server::AccessToken.historical(:client_id=>client.id) }.to_json
         end
 
         put "/api/client/:id" do
@@ -217,6 +229,7 @@ module Rack
               :displayName=>client.display_name, :link=>client.link, :imageUrl=>client.image_url, :scopes=>client.scopes,
               :url=>"#{request.script_name}/api/client/#{client.id}",
               :revoke=>"#{request.script_name}/api/client/#{client.id}/revoke",
+              :history=>"#{request.script_name}/api/client/#{client.id}/history",
               :created=>client.created_at, :revoked=>client.revoked }
           end
 

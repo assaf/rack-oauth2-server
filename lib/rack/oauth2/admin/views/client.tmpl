@@ -14,11 +14,14 @@
       {{if revoked}}Revoked {{html $.shortdate(revoked)}}{{/if}}
     </div>
   </div>
-  <ul class="badges">
-    <li title="Access tokens granted, lifetime total"><big>${$.thousands(tokens.total)}</big><small>Granted</small></li>
-    <li title="Access tokens granted, last 7 days"><big>${$.thousands(tokens.week)}</big><small>This Week</small></li>
-    <li title="Access tokens revoked, last 7 days"><big>${$.thousands(tokens.revoked)}</big><small>Revoked (Week)</small></li>
-  </ul>
+  <div class="metrics">
+    <div id="fig"></div>
+    <ul class="badges">
+      <li title="Access tokens granted, lifetime total"><big>${$.thousands(tokens.total)}</big><small>Granted</small></li>
+      <li title="Access tokens granted, last 7 days"><big>${$.thousands(tokens.week)}</big><small>This Week</small></li>
+      <li title="Access tokens revoked, last 7 days"><big>${$.thousands(tokens.revoked)}</big><small>Revoked (Week)</small></li>
+    </ul>
+  </div>
   <table class="tokens">
     <thead>
       <th>Token</th>

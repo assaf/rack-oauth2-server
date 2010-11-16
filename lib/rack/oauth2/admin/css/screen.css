@@ -126,6 +126,7 @@ button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0
   padding: 2em 2em 4em 2em;
   background: #fff;
   border: 1px solid #fff;
+  min-width: 960px;
 }
 #footer {
   background: #eee;
@@ -220,6 +221,22 @@ table.tokens td.scope {
   float: left;
 }
 
+.metrics {
+  height: 100px;
+}
+.metrics #fig {
+  float: left;
+  width: 500px;
+  height: 60px;
+}
+.metrics:after {
+  content: ".";
+  display: block;
+  clear: both;
+  visibility: hidden;
+  line-height: 0;
+  height: 0;
+}
 .badges {
   list-style: none;
   margin:  0;
@@ -244,7 +261,6 @@ table.tokens td.scope {
 }
 
 .client .details {
-  float: left;
 }
 .client .details .name {
   margin: 0;
@@ -267,6 +283,8 @@ table.tokens td.scope {
   margin: 0 0 0 0.3em;
 }
 .client .details .meta {
+  clear: both;
+  display: block;
   color: #888;
   font-size: 10pt;
 }
