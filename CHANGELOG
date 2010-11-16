@@ -7,6 +7,9 @@ clients, e.g. in mogno console:
 
   db.oauth2.clients.update({}, { $set: { scopes: ["read", "write"] } }, true, true)
 
+Rack::OAuth2::Server class methods get register -- for registering and updating
+client application record -- and get_token_for -- to obtain new/existing token.
+
 Web console now allows you to set/unset individual scopes for each client
 application.
 

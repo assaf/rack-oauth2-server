@@ -16,21 +16,85 @@ module Rack
 
       class << self
         # Return AuthRequest from authorization request handle.
+        #
+        # @param [String] authorization Authorization handle (e.g. from
+        # oauth.authorization)
+        # @return [AuthReqeust]
         def get_auth_request(authorization)
           AuthRequest.find(authorization)
         end
 
         # Returns Client from client identifier.
+        #
+        # @param [String] client_id Client identifier (e.g. from oauth.client.id)
+        # @return [Client]
         def get_client(client_id)
           Client.find(client_id)
         end
 
+        # Registers and returns a new Client. Can also be used to update
+        # existing client registration, by passing identifier (and secret) of
+        # existing client record. That way, your setup script can create a new
+        # client application and run repeatedly without fail. Also useful for
+        # adding new scopes to your existing client application.
+        #
+        # @param [Hash] args Arguments for registering client application
+        # @option args [String] :id Client identifier. Use this to update
+        # existing client registration (in combination wih secret)
+        # @option args [String] :secret Client secret. Use this to update
+        # existing client registration.
+        # @option args [String] :display_name Name to show when authorizing
+        # access (e.g.  "My Awesome Application")
+        # @option args [String] link Link to client application's Web site 
+        # @option args [String] image_url URL of image to show alongside display
+        # name.
+        # @option args [String] redirect_uri Redirect URL: authorization
+        # requests for this client will always redirect back to this URL.
+        # @option args [Array] scopes Scopes that client application can request
+        #
+        # @example Registering new client application
+        #   Server.register :display_name=>"My Application",
+        #     :link=>"http://example.com", :scopes=>%w{read write},
+        #     :redirect_uri=>"http://example.com/oauth/callback"
+        # @example Migration using configuration file
+        #   config = YAML.load_file(Rails.root + "config/oauth.yml")
+        #   Server.register config["id"], config["secret"],
+        #     :display_name=>"My  Application", :link=>"http://example.com",
+        #     :scopes=>config["scopes"],
+        #     :redirect_uri=>"http://example.com/oauth/callback"
+        def register(args)
+          if args[:id] && args[:secret] && (client = get_client(args[:id]))
+            fail "Client secret does not match" unless client.secret == args[:secret]
+            client.update args
+          else
+            Client.create(args)
+          end
+        end
+
         # Returns AccessToken from token.
+        #
+        # @param [String] token Access token (e.g. from oauth.access_token)
+        # @return [AccessToken]
         def get_access_token(token)
           AccessToken.from_token(token)
         end
 
+        # Returns AccessToken for the specified identity, client application and
+        # scopes. You can use this method to request existing access token, new
+        # token generated if one does not already exists.
+        #
+        # @param [String] identity Identity, e.g. user ID, account ID
+        # @param [String] client_id Client application identifier
+        # @param [String] scope Access scope (e.g. "read write")
+        # @return [AccessToken]
+        def get_token_for(identity, client_id, scope)
+          AccessToken.get_token_for(identity, client_id, scope)
+        end
+
         # Returns all AccessTokens for an identity.
+        #
+        # @param [String] identity Identity, e.g. user ID, account ID
+        # @return [Array<AccessToken>]
         def list_access_tokens(identity)
           AccessToken.from_identity(identity)
         end
@@ -267,7 +331,7 @@ module Rack
             requested_scope = Utils.normalize_scopes(request.POST["scope"])
             allowed_scopes = client.scopes
             raise InvalidScopeError unless (requested_scope - allowed_scopes).empty?
-            access_token = AccessToken.get_token_for(identity, requested_scope, client.id)
+            access_token = AccessToken.get_token_for(identity, client.id, requested_scope)
           else raise UnsupportedGrantType
           end
           logger.info "Access token #{access_token.token} granted to client #{client.display_name}, identity #{access_token.identity}" if logger

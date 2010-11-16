@@ -257,7 +257,7 @@ class AccessTokenTest < Test::Unit::TestCase
 
   context "list tokens" do
     setup do
-      @other = Rack::OAuth2::Server::AccessToken.get_token_for("foobar", "read", client.id).token
+      @other = Rack::OAuth2::Server.get_token_for("foobar", client.id, "read").token
       get "/list_tokens"
     end
 
@@ -273,23 +273,23 @@ class AccessTokenTest < Test::Unit::TestCase
 
   context "get_token_for" do
     should "return two different tokens for two different clients" do
-      myapp = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4cca30423321e895cb000001")
-      yourapp = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4fff30423321e895cb000001")
+      myapp = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read write")
+      yourapp = Rack::OAuth2::Server.get_token_for("Batman", "4fff30423321e895cb000001", "read write")
       assert myapp.token != yourapp.token
     end
     should "return two different tokens for two different identities" do
-      me = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4cca30423321e895cb000001")
-      you = Rack::OAuth2::Server::AccessToken.get_token_for("Robin", "read write", "4cca30423321e895cb000001")
+      me = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read write")
+      you = Rack::OAuth2::Server.get_token_for("Robin", "4cca30423321e895cb000001", "read write")
       assert me.token != you.token
     end
     should "return two different tokens for two different scope" do
-      write = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write", "4cca30423321e895cb000001")
-      math = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read math", "4cca30423321e895cb000001")
+      write = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read write")
+      math = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read math")
       assert write.token != math.token
     end
     should "return same tokens regardless of order of scope" do
-      one = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "read write math", "4cca30423321e895cb000001")
-      two = Rack::OAuth2::Server::AccessToken.get_token_for("Batman", "math write read", "4cca30423321e895cb000001")
+      one = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read write math")
+      two = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "math write read")
       assert_equal one.token, two.token
     end
   end

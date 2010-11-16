@@ -53,7 +53,7 @@ module Rack
         # InvalidGrantError.
         def authorize!
           raise InvalidGrantError if self.access_token || self.revoked
-          access_token = AccessToken.get_token_for(identity, scope, client_id)
+          access_token = AccessToken.get_token_for(identity, client_id, scope)
           self.access_token = access_token.token
           self.granted_at = Time.now.utc.to_i
           self.class.collection.update({ :_id=>code, :access_token=>nil, :revoked=>nil }, { :$set=>{ :granted_at=>granted_at, :access_token=>access_token.token } }, :safe=>true)

@@ -291,13 +291,26 @@ Programatically, registering a new client is as simple as:
 
   $ ./script/console
   Loading development environment (Rails 2.3.8)
-  > uber_client = Rack::OAuth2::Server::Client.create(:display_name=>"UberClient",
-     :link=>"http://uberclient.dot/",
+  > Rack::OAuth2::Server.register(:display_name=>"UberClient",
+     :link=>"http://example.com/",
      :image_url=>"http://farm5.static.flickr.com/4122/4890273282_58f7c345f4.jpg",
      :scopes=>%{read write},
-     :redirect_uri=>"http://uberclient.dot/oauth/callback")
+     :redirect_uri=>"http://example.com/oauth/callback")
   > puts "Your client identifier: #{client.id}"
   > puts "Your client secret: #{client.secret}"
+
+You may want your application to register its own client application, always
+with the same client ID and secret, which are also stored in a configuration
+file. For example, your +db/seed.rb+ may contain:
+
+  oauth2 = YAML.load_file(Rails.root + "config/oauth2.yml")
+  Rack::OAuth2::Server.register(id: oauth2["client_id"], secret: oauth2["client_secret"],
+    display_name: "UberClient", link: "http://example.com",
+    redirect_uri: "http://example.com/oauth/callback", scopes: oauth2["scopes"].split)
+
+When you call +register+ with +id+ and +secret+ parameters it either registers a
+new client with these specific ID and sceret, or if a client already exists,
+updates its other properties.
 
 
 === Step 6: Pimp Your API

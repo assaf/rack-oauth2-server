@@ -26,10 +26,16 @@ module Rack
           def create(args)
             redirect_uri = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
             scopes = Server::Utils.normalize_scopes(args[:scopes])
-            fields =  { :secret=>Server.secure_random, :display_name=>args[:display_name], :link=>args[:link],
+            fields =  { :display_name=>args[:display_name], :link=>args[:link],
                         :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :scopes=>scopes,
                         :created_at=>Time.now.utc.to_i, :revoked=>nil }
-            fields[:_id] = collection.insert(fields)
+            if args[:id] && args[:secret]
+              fields[:_id], fields[:secret] = args[:id], args[:secret]
+              collection.insert(fields)
+            else
+              fields[:secret] = Server.secure_random
+              fields[:_id] = collection.insert(fields)
+            end
             Server.new_instance self, fields
           end
 

@@ -63,7 +63,7 @@ module Rack
             self.grant_code = access_grant.code
             self.class.collection.update({ :_id=>id, :revoked=>nil }, { :$set=>{ :grant_code=>access_grant.code, :authorized_at=>authorized_at } })
           else # Requested access token
-            access_token = AccessToken.get_token_for(identity, scope, client_id)
+            access_token = AccessToken.get_token_for(identity, client_id, scope)
             self.access_token = access_token.token
             self.class.collection.update({ :_id=>id, :revoked=>nil, :access_token=>nil }, { :$set=>{ :access_token=>access_token.token, :authorized_at=>authorized_at } })
           end

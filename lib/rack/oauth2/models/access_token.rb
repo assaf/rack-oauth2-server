@@ -15,7 +15,7 @@ module Rack
           end
 
           # Get an access token (create new one if necessary).
-          def get_token_for(identity, scope, client_id)
+          def get_token_for(identity, client_id, scope)
             scope = Utils.normalize_scopes(scope)
             client_id = BSON::ObjectId(client_id.to_s)
             unless token = collection.find_one({ :identity=>identity.to_s, :scope=>scope, :client_id=>client_id, :revoked=>nil })
