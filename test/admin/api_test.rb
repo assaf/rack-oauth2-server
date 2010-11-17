@@ -18,12 +18,12 @@ class AdminApiTest < Test::Unit::TestCase
 
 
   def without_scope
-    token = Server.get_token_for("Superman", client.id, "nobody")
+    token = Server.token_for("Superman", client.id, "nobody")
     header "Authorization", "OAuth #{token}"
   end
 
   def with_scope
-    token = Server.get_token_for("Superman", client.id, "oauth-admin")
+    token = Server.token_for("Superman", client.id, "oauth-admin")
     header "Authorization", "OAuth #{token}"
   end
 
@@ -149,7 +149,7 @@ class AdminApiTest < Test::Unit::TestCase
         tokens = []
         1.upto(10).map do |days|
           Timecop.travel -days*86400 do
-            tokens << Server.get_token_for("Superman#{days}", client.id)
+            tokens << Server.token_for("Superman#{days}", client.id)
           end
         end
         # Revoke one token today (within past 7 days), one 10 days ago (beyond)

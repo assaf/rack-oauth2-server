@@ -257,7 +257,7 @@ class AccessTokenTest < Test::Unit::TestCase
 
   context "list tokens" do
     setup do
-      @other = Server.get_token_for("foobar", client.id, "read")
+      @other = Server.token_for("foobar", client.id, "read")
       get "/list_tokens"
     end
 
@@ -270,29 +270,6 @@ class AccessTokenTest < Test::Unit::TestCase
     end
   end
 
-
-  context "get_token_for" do
-    should "return two different tokens for two different clients" do
-      myapp = Server.get_token_for("Batman", client.id, "read write")
-      yourapp = Server.get_token_for("Batman", Server.register(:scope=>"read write").id, "read write")
-      assert myapp != yourapp
-    end
-    should "return two different tokens for two different identities" do
-      me = Server.get_token_for("Batman", client.id, "read write")
-      you = Server.get_token_for("Robin", client.id, "read write")
-      assert me != you
-    end
-    should "return two different tokens for two different scope" do
-      write = Server.get_token_for("Batman", client.id, "read write")
-      math = Server.get_token_for("Batman", client.id, "read math")
-      assert write != math
-    end
-    should "return same tokens regardless of order of scope" do
-      one = Server.get_token_for("Batman", client.id, "read write math")
-      two = Server.get_token_for("Batman", client.id, "math write read")
-      assert_equal one, two
-    end
-  end
 
   context "with specific host" do
     context "right host" do

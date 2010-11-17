@@ -134,9 +134,9 @@ class ServerTest < Test::Unit::TestCase
   end
 
   
-  context "get_access_grant" do
+  context "access_grant" do
     setup do
-      code = Server.get_access_grant("Batman", client.id, %w{read})
+      code = Server.access_grant("Batman", client.id, %w{read})
       basic_authorize client.id, client.secret
       post "/oauth/access_token", :scope=>"read", :grant_type=>"authorization_code", :code=>code, :redirect_uri=>client.redirect_uri
       @token = JSON.parse(last_response.body)["access_token"]
@@ -159,7 +159,7 @@ class ServerTest < Test::Unit::TestCase
     end
 
     context "with no scope" do
-      setup { @code = Server.get_access_grant("Batman", client.id) }
+      setup { @code = Server.access_grant("Batman", client.id) }
 
       should "pick client scope" do
         assert_equal %w{oauth-admin read write}, Server::AccessGrant.from_code(@code).scope
@@ -170,7 +170,7 @@ class ServerTest < Test::Unit::TestCase
 
 
   context "get_access_token" do
-    setup { @token = Server.get_token_for("Batman", client.id, %w{read}) }
+    setup { @token = Server.token_for("Batman", client.id, %w{read}) }
     should "return authorization request" do
       assert_equal @token, Server.get_access_token(@token).token
     end
@@ -180,7 +180,7 @@ class ServerTest < Test::Unit::TestCase
     end
 
     context "with no scope" do
-      setup { @token = Server.get_token_for("Batman", client.id) }
+      setup { @token = Server.token_for("Batman", client.id) }
 
       should "pick client scope" do
         assert_equal %w{oauth-admin read write}, Server::AccessToken.from_token(@token).scope
@@ -189,8 +189,8 @@ class ServerTest < Test::Unit::TestCase
   end
 
 
-  context "get_token_for" do
-    setup { @token = Server.get_token_for("Batman", client.id, %w{read write}) }
+  context "token_for" do
+    setup { @token = Server.token_for("Batman", client.id, %w{read write}) }
 
     should "return access token" do
       assert_match /[0-9a-f]{32}/, @token
@@ -209,29 +209,29 @@ class ServerTest < Test::Unit::TestCase
     end
 
     should "return same token for same parameters" do
-      assert_equal @token, Server.get_token_for("Batman", client.id, %w{write read})
+      assert_equal @token, Server.token_for("Batman", client.id, %w{write read})
     end
 
     should "return different token for different identity" do
-      assert @token != Server.get_token_for("Superman", client.id, %w{read write})
+      assert @token != Server.token_for("Superman", client.id, %w{read write})
     end
 
     should "return different token for different client" do
       client = Server.register(:display_name=>"MyApp")
-      assert @token != Server.get_token_for("Batman", client.id, %w{read write})
+      assert @token != Server.token_for("Batman", client.id, %w{read write})
     end
 
     should "return different token for different scope" do
-      assert @token != Server.get_token_for("Batman", client.id, %w{read})
+      assert @token != Server.token_for("Batman", client.id, %w{read})
     end
   end
 
 
   context "list access tokens" do
     setup do
-      @one = Server.get_token_for("Batman", client.id, %w{read})
-      @two = Server.get_token_for("Superman", client.id, %w{read})
-      @three = Server.get_token_for("Batman", client.id, %w{write})
+      @one = Server.token_for("Batman", client.id, %w{read})
+      @two = Server.token_for("Superman", client.id, %w{read})
+      @three = Server.token_for("Batman", client.id, %w{write})
     end
 
     should "return all tokens for identity" do
