@@ -342,21 +342,21 @@ module Rack
           when "authorization_code"
             # 4.1.1.  Authorization Code
             grant = AccessGrant.from_code(request.POST["code"])
-            raise InvalidGrantError unless grant && client.id == grant.client_id
-            raise InvalidGrantError unless grant.redirect_uri.nil? || grant.redirect_uri == Utils.parse_redirect_uri(request.POST["redirect_uri"]).to_s
+            raise InvalidGrantError, "Wrong client" unless grant && client.id == grant.client_id
+            raise InvalidGrantError, "Wrong redirect URI" unless grant.redirect_uri.nil? || grant.redirect_uri == Utils.parse_redirect_uri(request.POST["redirect_uri"]).to_s
             access_token = grant.authorize!
           when "password"
             raise UnsupportedGrantType unless options.authenticator
             # 4.1.2.  Resource Owner Password Credentials
             username, password = request.POST.values_at("username", "password")
-            raise InvalidGrantError unless username && password
+            raise InvalidGrantError, "Missing username/password" unless username && password
             requested_scope = Utils.normalize_scope(request.POST["scope"])
             allowed_scope = client.scope
             raise InvalidScopeError unless (requested_scope - allowed_scope).empty?
             args = [username, password]
             args << client.id << requested_scope unless options.authenticator.arity == 2
             identity = options.authenticator.call(*args)
-            raise InvalidGrantError unless identity
+            raise InvalidGrantError, "Username/password do not match" unless identity
             access_token = AccessToken.get_token_for(identity, client, requested_scope)
           else
             raise UnsupportedGrantType

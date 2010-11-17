@@ -8,11 +8,10 @@ module Rack
       # Rails 3.x integration.
       class Railtie < ::Rails::Railtie # :nodoc:
         config.oauth = Server::Options.new
-        config.oauth.logger = ::Rails.logger
 
         initializer "rack-oauth2-server" do |app|
-          #app.config.extend ::Rack::OAuth2::Rails::Configuration
           app.middleware.use ::Rack::OAuth2::Server, app.config.oauth
+          config.oauth.logger ||= ::Rails.logger
           class ::ActionController::Base
             helper ::Rack::OAuth2::Rails::Helpers
             include ::Rack::OAuth2::Rails::Helpers
