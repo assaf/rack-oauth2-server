@@ -19,6 +19,12 @@
       <input type="url" name="redirectUri" value="${redirectUri}" size="70" required>
       <p class="hint">Users redirected back to this URL on successful authorization.</p>
     </label>
+    <label>Notes
+      <textarea name="notes" cols="50" rows="5">${notes}</textarea>
+      <p class="hint">For internal use.</p>
+    </label>
+    {{if id}}<button>Save Changes</button>
+    {{else}}<button>Create Client</button>{{/if}}
   </div>
   <div class="scopes">
     <h2>Scopes</h2>
@@ -36,8 +42,6 @@
     </label>
   </div>
   <hr>
-  {{if id}}<button>Save Changes</button>
-  {{else}}<button>Create Client</button>{{/if}}
 </form>
 <script type="text/javascript">
   $(function() {

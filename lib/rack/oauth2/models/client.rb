@@ -18,6 +18,7 @@ module Rack
           # # :image_url -- URL of image to show alongside display name
           # # :redirect_uri -- Registered redirect URI.
           # # :scopes -- List of scopes the client is allowed to request.
+          # # :notes -- Free form text.
           # 
           # This method does not validate any of these fields, in fact, you're
           # not required to set them, use them, or use them as suggested. Using
@@ -27,7 +28,8 @@ module Rack
             redirect_uri = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
             scopes = Server::Utils.normalize_scopes(args[:scopes])
             fields =  { :display_name=>args[:display_name], :link=>args[:link],
-                        :image_url=>args[:image_url], :redirect_uri=>redirect_uri, :scopes=>scopes,
+                        :image_url=>args[:image_url], :redirect_uri=>redirect_uri,
+                        :nodes=>args[:notes].to_s, :scopes=>scopes,
                         :created_at=>Time.now.utc.to_i, :revoked=>nil }
             if args[:id] && args[:secret]
               fields[:_id], fields[:secret] = BSON::ObjectId(args[:id].to_s), args[:secret]
@@ -83,6 +85,8 @@ module Rack
         attr_reader :redirect_uri
         # List of scopes the client is allowed to request.
         attr_reader :scopes
+        # Free form fields for internal use.
+        attr_reader :notes
         # Does what it says on the label.
         attr_reader :created_at
         # Timestamp if revoked.
@@ -99,7 +103,7 @@ module Rack
         end
 
         def update(args)
-          fields = [:display_name, :link, :image_url].inject({}) { |h,k| v = args[k]; h[k] = v if v; h }
+          fields = [:display_name, :link, :image_url, :notes].inject({}) { |h,k| v = args[k]; h[k] = v if v; h }
           fields[:redirect_uri] = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
           fields[:scopes] = Server::Utils.normalize_scopes(args[:scopes])
           self.class.collection.update({ :_id=>id }, { :$set=>fields })

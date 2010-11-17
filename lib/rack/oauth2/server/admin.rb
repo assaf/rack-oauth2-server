@@ -221,12 +221,14 @@ module Rack
                 image_url.absolute? && %{http https}.include?(image_url.scheme)
             end
             scopes = Server::Utils.normalize_scopes(params[:scopes])
-            { :display_name=>display_name, :link=>link.to_s, :image_url=>image_url.to_s, :redirect_uri=>redirect_uri.to_s, :scopes=>scopes }
+            { :display_name=>display_name, :link=>link.to_s, :image_url=>image_url.to_s,
+              :redirect_uri=>redirect_uri.to_s, :scopes=>scopes, :notes=>params[:notes] }
           end
 
           def client_as_json(client, with_stats = false)
             { "id"=>client.id.to_s, "secret"=>client.secret, :redirectUri=>client.redirect_uri,
-              :displayName=>client.display_name, :link=>client.link, :imageUrl=>client.image_url, :scopes=>client.scopes,
+              :displayName=>client.display_name, :link=>client.link, :imageUrl=>client.image_url,
+              :notes=>client.notes, :scopes=>client.scopes,
               :url=>"#{request.script_name}/api/client/#{client.id}",
               :revoke=>"#{request.script_name}/api/client/#{client.id}/revoke",
               :history=>"#{request.script_name}/api/client/#{client.id}/history",

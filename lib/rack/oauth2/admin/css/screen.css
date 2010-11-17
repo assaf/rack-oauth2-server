@@ -262,6 +262,7 @@ table.tokens td.scope {
 }
 
 .client .details {
+  margin: 0 0 2em 0;
 }
 .client .details .name {
   margin: 0;
@@ -288,6 +289,10 @@ table.tokens td.scope {
   display: block;
   color: #888;
   font-size: 10pt;
+}
+.client .details .notes {
+  font-size: 11pt;
+  margin: 0.2em 0;
 }
 
 .client.new, .client.edit {

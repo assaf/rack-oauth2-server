@@ -51,6 +51,7 @@ module Rack
         # @option args [String] redirect_uri Redirect URL: authorization
         # requests for this client will always redirect back to this URL.
         # @option args [Array] scopes Scopes that client application can request
+        # @option args [Array] notes Free form text, for internal use.
         #
         # @example Registering new client application
         #   Server.register :display_name=>"My Application",

@@ -153,8 +153,10 @@ class AdminApiTest < Test::Unit::TestCase
           end
         end
         # Revoke one token today (within past 7 days), one 10 days ago (beyond)
-        tokens.first.revoke!
-        tokens.last.revoke!
+        Timecop.travel -7 * 86400 do
+          tokens[0].revoke!
+        end
+        tokens[1].revoke!
         with_scope ; get "/oauth/admin/api/clients"
       end
 

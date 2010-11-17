@@ -13,6 +13,7 @@
       Created {{html $.shortdate(revoked)}}
       {{if revoked}}Revoked {{html $.shortdate(revoked)}}{{/if}}
     </div>
+    {{each notes}}<p class="notes">${this}</p>{{/each}}
   </div>
   <div class="metrics">
     <div id="fig"></div>
@@ -49,7 +50,7 @@
     </tbody>
   </table>
   <div class="pagination">
-    {{if tokens.previous}}<a href="#/client/${id}/${tokens.page - 1}" rel="previous">Previous</a>{{/if}}
-    {{if tokens.next}}<a href="#/client/${id}/${tokens.page + 1}" rel="next">Next</a>{{/if}}
+    {{if tokens.previous}}<a href="#/client/${id}/page/${tokens.page - 1}" rel="previous">Previous</a>{{/if}}
+    {{if tokens.next}}<a href="#/client/${id}/page/${tokens.page + 1}" rel="next">Next</a>{{/if}}
   </div>
 </div>
