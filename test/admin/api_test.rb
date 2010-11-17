@@ -19,12 +19,12 @@ class AdminApiTest < Test::Unit::TestCase
 
   def without_scope
     token = Server.get_token_for("Superman", client.id, "nobody")
-    header "Authorization", "OAuth #{token.token}"
+    header "Authorization", "OAuth #{token}"
   end
 
   def with_scope
     token = Server.get_token_for("Superman", client.id, "oauth-admin")
-    header "Authorization", "OAuth #{token.token}"
+    header "Authorization", "OAuth #{token}"
   end
 
   def json
@@ -84,8 +84,8 @@ class AdminApiTest < Test::Unit::TestCase
       should "return list of clients" do
         assert Array === json["list"]
       end
-      should "return all known scopes" do
-        assert_equal %w{read write}, json["scopes"]
+      should "return known scope" do
+        assert_equal %w{read write}, json["scope"]
       end
     end
 
@@ -123,8 +123,8 @@ class AdminApiTest < Test::Unit::TestCase
       should "provide link to revoke resource"do
         assert_equal ["/oauth/admin/api/client", client.id, "revoke"].join("/"), @first["revoke"]
       end
-      should "provide scopes for client" do
-        assert_equal %w{read write}, @first["scopes"]
+      should "provide scope for client" do
+        assert_equal %w{oauth-admin read write}, @first["scope"]
       end
       should "tell if not revoked" do
         assert @first["revoked"].nil?
@@ -149,14 +149,14 @@ class AdminApiTest < Test::Unit::TestCase
         tokens = []
         1.upto(10).map do |days|
           Timecop.travel -days*86400 do
-            tokens << Server.get_token_for("Superman", client.id, days.to_s)
+            tokens << Server.get_token_for("Superman#{days}", client.id)
           end
         end
         # Revoke one token today (within past 7 days), one 10 days ago (beyond)
         Timecop.travel -7 * 86400 do
-          tokens[0].revoke!
+          Server.get_access_token(tokens[0]).revoke!
         end
-        tokens[1].revoke!
+        Server.get_access_token(tokens[1]).revoke!
         with_scope ; get "/oauth/admin/api/clients"
       end
 

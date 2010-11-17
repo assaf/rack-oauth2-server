@@ -21,7 +21,7 @@ module Rack
   <dt>Resource requiring authorization and scope "sudo":</dt>
   <dd>http://#{request.host}:#{request.port}/make</dd>
 </dl>
-<p>The scopes are "nobody", "sudo" and "oauth-admin".</p>
+<p>The scope can be "nobody", "sudo", "oauth-admin" or combination of the three.</p>
 <p>You can manage client applications and tokens from the <a href="/oauth/admin">OAuth console</a>.</p>
           HTML
         end

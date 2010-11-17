@@ -12,9 +12,10 @@ module Rack
           end
 
           # Create a new access grant.
-          def create(identity, scope, client_id, redirect_uri)
+          def create(identity, client, scope, redirect_uri = nil)
+            scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
             fields = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope,
-                       :client_id=>BSON::ObjectId(client_id.to_s), :redirect_uri=>redirect_uri,
+                       :client_id=>client.id, :redirect_uri=>client.redirect_uri || redirect_uri,
                        :created_at=>Time.now.utc.to_i, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
             collection.insert fields
             Server.new_instance self, fields
@@ -34,7 +35,7 @@ module Rack
         attr_reader :client_id
         # Redirect URI for this grant.
         attr_reader :redirect_uri
-        # The scope granted in this token.
+        # The scope requested in this grant.
         attr_reader :scope
         # Does what it says on the label.
         attr_reader :created_at
@@ -53,7 +54,8 @@ module Rack
         # InvalidGrantError.
         def authorize!
           raise InvalidGrantError if self.access_token || self.revoked
-          access_token = AccessToken.get_token_for(identity, client_id, scope)
+          client = Client.find(client_id) or raise InvalidGrantError
+          access_token = AccessToken.get_token_for(identity, client, scope)
           self.access_token = access_token.token
           self.granted_at = Time.now.utc.to_i
           self.class.collection.update({ :_id=>code, :access_token=>nil, :revoked=>nil }, { :$set=>{ :granted_at=>granted_at, :access_token=>access_token.token } }, :safe=>true)

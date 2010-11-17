@@ -17,10 +17,10 @@ module Rack
           raise InvalidRequestError, "Redirect URL looks fishy to me"
         end
 
-        # Gives list of scopes, as either array of string, return array of
-        # scope names (unique and sorted).
-        def normalize_scopes(scopes)
-          (Array === scopes ? scopes.join(" ") : scopes || "").split(/\s+/).compact.uniq.sort
+        # Given scope as either array or string, return array of same names,
+        # unique and sorted.
+        def normalize_scope(scope)
+          (Array === scope ? scope.join(" ") : scope || "").split(/\s+/).compact.uniq.sort
         end
 
       end

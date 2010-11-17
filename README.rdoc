@@ -50,7 +50,7 @@ Rack::OAuth2::Sinatra into your application. For example:
     register Rack::OAuth2::Sinatra
 
     oauth.database = Mongo::Connection.new["my_db"]
-    oauth.scopes = %w{read write}
+    oauth.scope = %w{read write}
     oauth.authenticator = lambda do |username, password|
       user = User.find(username)
       user if user && user.authenticated?(password)
@@ -304,7 +304,7 @@ Programatically, registering a new client is as simple as:
   > Rack::OAuth2::Server.register(:display_name=>"UberClient",
      :link=>"http://example.com/",
      :image_url=>"http://farm5.static.flickr.com/4122/4890273282_58f7c345f4.jpg",
-     :scopes=>%{read write},
+     :scope=>%{read write},
      :redirect_uri=>"http://example.com/oauth/callback")
   > puts "Your client identifier: #{client.id}"
   > puts "Your client secret: #{client.secret}"
@@ -316,7 +316,7 @@ file. For example, your +db/seed.rb+ may contain:
   oauth2 = YAML.load_file(Rails.root + "config/oauth2.yml")
   Rack::OAuth2::Server.register(id: oauth2["client_id"], secret: oauth2["client_secret"],
     display_name: "UberClient", link: "http://example.com",
-    redirect_uri: "http://example.com/oauth/callback", scopes: oauth2["scopes"].split)
+    redirect_uri: "http://example.com/oauth/callback", scope: oauth2["scope"].split)
 
 When you call +register+ with +id+ and +secret+ parameters it either registers a
 new client with these specific ID and sceret, or if a client already exists,
@@ -368,7 +368,7 @@ client ID/secret. For example, for Rails 2.3.x add this to
       config.middleware.use Rack::OAuth2::Server::Admin.mount
       Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
       Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
-      Rack::OAuth2::Server::Admin.set :scopes, %w{read write}
+      Rack::OAuth2::Server::Admin.set :scope, %w{read write}
     end
   end
 
@@ -379,7 +379,7 @@ For Rails 3.0.x, add this to you +config/application.rb+:
       config.after_initialize do
         Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
         Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
-        Rack::OAuth2::Server::Admin.set :scopes, %w{read write}
+        Rack::OAuth2::Server::Admin.set :scope, %w{read write}
       end
     end
   end
@@ -397,7 +397,7 @@ like so (e.g. in +config.ru+):
   end
   Rack::OAuth2::Server::Admin.set :client_id, "4dca20453e4859cb000007"
   Rack::OAuth2::Server::Admin.set :client_secret, "981fa734e110496fcf667cbf52fbaf03"
-  Rack::OAuth2::Server::Admin.set :scopes, %w{read write}
+  Rack::OAuth2::Server::Admin.set :scope, %w{read write}
 
 Next, open your browser to http://example.com/oauth/admin, or wherever you
 mounted the Web admin.
@@ -414,7 +414,8 @@ You can set the following options:
   "http://example.com/users/#{id}")
 - +force_ssl+ -- Forces all requests to use HTTPS (true by default except in
   development mode).
-- +scopes+ -- Common scopes shown and added by default to new clients.
+- +scope+ -- Common scope shown and added by default to new clients (array of
+  names, e.g. ["read", "write"]).
  
 == Web Admin API
 

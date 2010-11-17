@@ -103,7 +103,7 @@ class AccessTokenTest < Test::Unit::TestCase
 
       context "revoked HTTP token" do
         setup do
-          Rack::OAuth2::Server::AccessToken.from_token(@token).revoke!
+          Server::AccessToken.from_token(@token).revoke!
           with_token
           get "/private"
         end
@@ -257,7 +257,7 @@ class AccessTokenTest < Test::Unit::TestCase
 
   context "list tokens" do
     setup do
-      @other = Rack::OAuth2::Server.get_token_for("foobar", client.id, "read").token
+      @other = Server.get_token_for("foobar", client.id, "read")
       get "/list_tokens"
     end
 
@@ -273,24 +273,24 @@ class AccessTokenTest < Test::Unit::TestCase
 
   context "get_token_for" do
     should "return two different tokens for two different clients" do
-      myapp = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read write")
-      yourapp = Rack::OAuth2::Server.get_token_for("Batman", "4fff30423321e895cb000001", "read write")
-      assert myapp.token != yourapp.token
+      myapp = Server.get_token_for("Batman", client.id, "read write")
+      yourapp = Server.get_token_for("Batman", Server.register(:scope=>"read write").id, "read write")
+      assert myapp != yourapp
     end
     should "return two different tokens for two different identities" do
-      me = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read write")
-      you = Rack::OAuth2::Server.get_token_for("Robin", "4cca30423321e895cb000001", "read write")
-      assert me.token != you.token
+      me = Server.get_token_for("Batman", client.id, "read write")
+      you = Server.get_token_for("Robin", client.id, "read write")
+      assert me != you
     end
     should "return two different tokens for two different scope" do
-      write = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read write")
-      math = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read math")
-      assert write.token != math.token
+      write = Server.get_token_for("Batman", client.id, "read write")
+      math = Server.get_token_for("Batman", client.id, "read math")
+      assert write != math
     end
     should "return same tokens regardless of order of scope" do
-      one = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "read write math")
-      two = Rack::OAuth2::Server.get_token_for("Batman", "4cca30423321e895cb000001", "math write read")
-      assert_equal one.token, two.token
+      one = Server.get_token_for("Batman", client.id, "read write math")
+      two = Server.get_token_for("Batman", client.id, "math write read")
+      assert_equal one, two
     end
   end
 

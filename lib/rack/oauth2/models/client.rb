@@ -17,7 +17,7 @@ module Rack
           # # :link -- Link to client Web site (e.g. http://uberclient.dot)
           # # :image_url -- URL of image to show alongside display name
           # # :redirect_uri -- Registered redirect URI.
-          # # :scopes -- List of scopes the client is allowed to request.
+          # # :scope -- List of names the client is allowed to request.
           # # :notes -- Free form text.
           # 
           # This method does not validate any of these fields, in fact, you're
@@ -26,10 +26,10 @@ module Rack
           # how we learned that.
           def create(args)
             redirect_uri = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
-            scopes = Server::Utils.normalize_scopes(args[:scopes])
+            scope = Server::Utils.normalize_scope(args[:scope])
             fields =  { :display_name=>args[:display_name], :link=>args[:link],
                         :image_url=>args[:image_url], :redirect_uri=>redirect_uri,
-                        :nodes=>args[:notes].to_s, :scopes=>scopes,
+                        :nodes=>args[:notes].to_s, :scope=>scope,
                         :created_at=>Time.now.utc.to_i, :revoked=>nil }
             if args[:id] && args[:secret]
               fields[:_id], fields[:secret] = BSON::ObjectId(args[:id].to_s), args[:secret]
@@ -83,8 +83,8 @@ module Rack
         # Redirect URL. Supplied by the client if they want to restrict redirect
         # URLs (better security).
         attr_reader :redirect_uri
-        # List of scopes the client is allowed to request.
-        attr_reader :scopes
+        # List of scope the client is allowed to request.
+        attr_reader :scope
         # Free form fields for internal use.
         attr_reader :notes
         # Does what it says on the label.
@@ -105,7 +105,7 @@ module Rack
         def update(args)
           fields = [:display_name, :link, :image_url, :notes].inject({}) { |h,k| v = args[k]; h[k] = v if v; h }
           fields[:redirect_uri] = Server::Utils.parse_redirect_uri(args[:redirect_uri]).to_s if args[:redirect_uri]
-          fields[:scopes] = Server::Utils.normalize_scopes(args[:scopes])
+          fields[:scope] = Server::Utils.normalize_scope(args[:scope])
           self.class.collection.update({ :_id=>id }, { :$set=>fields })
           self.class.find(id)
         end

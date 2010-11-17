@@ -13,13 +13,13 @@ module Rack
     # access scope.
     #
     # Adds oauth setting you can use to configure the module (e.g. setting
-    # available scopes, see example).
+    # available scope, see example).
     #
     # @example config/environment.rb
     #   require "rack/oauth2/rails"
     #
     #   Rails::Initializer.run do |config|
-    #     config.oauth[:scopes] = %w{read write}
+    #     config.oauth[:scope] = %w{read write}
     #     config.oauth[:authenticator] = lambda do |username, password|
     #       User.authenticated username, password
     #     end

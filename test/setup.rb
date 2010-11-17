@@ -93,8 +93,8 @@ class Test::Unit::TestCase
 
   def setup
     Server.database = DATABASE
-    Server::Admin.scopes = %{read write}
-    @client = Server::Client.create(:display_name=>"UberClient", :redirect_uri=>"http://uberclient.dot/callback", :scopes=>%w{read write})
+    Server::Admin.scope = %{read write}
+    @client = Server.register(:display_name=>"UberClient", :redirect_uri=>"http://uberclient.dot/callback", :scope=>%w{read write oauth-admin})
   end
 
   attr_reader :client, :end_user

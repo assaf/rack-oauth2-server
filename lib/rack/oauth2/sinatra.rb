@@ -13,13 +13,13 @@ module Rack
     # access scope.
     #
     # Adds oauth setting you can use to configure the module (e.g. setting
-    # available scopes, see example).
+    # available scope, see example).
     #
     # @example
     #   require "rack/oauth2/sinatra"
     #   class MyApp < Sinatra::Base
     #     register Rack::OAuth2::Sinatra
-    #     oauth[:scopes] = %w{read write}
+    #     oauth[:scope] = %w{read write}
     #
     #     oauth_required "/api"
     #     oauth_required "/api/edit", :scope=>"write"

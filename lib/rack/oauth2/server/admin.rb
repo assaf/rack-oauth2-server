@@ -71,8 +71,8 @@ module Rack
         # Forces all requests to use HTTPS (true by default except in
         # development mode).
         set :force_ssl, !development?
-        # Common scopes shown and added by default to new clients.
-        set :scopes, []
+        # Common scope shown and added by default to new clients.
+        set :scope, []
 
 
         set :logger, defined?(::Rails) && ::Rails.logger
@@ -129,7 +129,7 @@ module Rack
         get "/api/clients" do
           content_type "application/json"
           json = { :list=>Server::Client.all.map { |client| client_as_json(client) },
-                   :scopes=>Server::Utils.normalize_scopes(settings.scopes),
+                   :scope=>Server::Utils.normalize_scope(settings.scope),
                    :history=>"#{request.script_name}/api/clients/history",
                    :tokens=>{ :total=>Server::AccessToken.count, :week=>Server::AccessToken.count(:days=>7),
                               :revoked=>Server::AccessToken.count(:days=>7, :revoked=>true) } }
@@ -220,15 +220,15 @@ module Rack
               halt 400, "Image URL must be an absolute URL with HTTP/S scheme" unless
                 image_url.absolute? && %{http https}.include?(image_url.scheme)
             end
-            scopes = Server::Utils.normalize_scopes(params[:scopes])
+            scope = Server::Utils.normalize_scope(params[:scope])
             { :display_name=>display_name, :link=>link.to_s, :image_url=>image_url.to_s,
-              :redirect_uri=>redirect_uri.to_s, :scopes=>scopes, :notes=>params[:notes] }
+              :redirect_uri=>redirect_uri.to_s, :scope=>scope, :notes=>params[:notes] }
           end
 
           def client_as_json(client, with_stats = false)
             { "id"=>client.id.to_s, "secret"=>client.secret, :redirectUri=>client.redirect_uri,
               :displayName=>client.display_name, :link=>client.link, :imageUrl=>client.image_url,
-              :notes=>client.notes, :scopes=>client.scopes,
+              :notes=>client.notes, :scope=>client.scope,
               :url=>"#{request.script_name}/api/client/#{client.id}",
               :revoke=>"#{request.script_name}/api/client/#{client.id}/revoke",
               :history=>"#{request.script_name}/api/client/#{client.id}/history",

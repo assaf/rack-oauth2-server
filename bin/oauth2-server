@@ -41,9 +41,9 @@ when "register"
     link = $stdin.gets
     print "Redirect URI:\t\t"
     redirect_uri = $stdin.gets
-    print "Scopes (space separated):\t\t"
-    scopes = $stdin.gets
-    client = Server.register(:display_name=>display_name, :link=>link, :redirect_uri=>redirect_uri, :scopes=>scopes)
+    print "Scope (space separated names):\t\t"
+    scope = $stdin.gets
+    client = Server.register(:display_name=>display_name, :link=>link, :redirect_uri=>redirect_uri, :scope=>scope)
   rescue
     puts "\nFailed to register client: #{$!}"
     exit -1
@@ -63,7 +63,7 @@ when "setup"
     fail "No an HTTP/S URL" unless uri.absolute? && %{http https}.include?(uri.scheme)
     fail "Path must end with /admin" unless uri.path[/\/admin$/]
     client = Server.register(:display_name=>"OAuth Console", :link=>uri.to_s, :image_url=>"#{uri.to_s}/images/oauth-2.png",
-                             :redirect_uri=>uri.to_s, :scopes=>"oauth-admin")
+                             :redirect_uri=>uri.to_s, :scope=>"oauth-admin")
   rescue
     puts "\nFailed to register client: #{$!}"
     exit -1
@@ -131,11 +131,11 @@ when "practice"
   admin_url = "http://localhost:#{port}/oauth/admin"
   unless client = Server::Client.lookup(admin_url)
     client = Server.register(:display_name=>"Practice OAuth Console", :image_url=>"#{admin_url}/images/oauth-2.png",
-                             :link=>admin_url, :redirect_uri=>admin_url, :scopes=>"oauth-admin")
+                             :link=>admin_url, :redirect_uri=>admin_url, :scope=>"oauth-admin")
   end
   Server::Admin.set :client_id, client.id
   Server::Admin.set :client_secret, client.secret
-  Server::Admin.set :scopes, "nobody sudo"
+  Server::Admin.set :scope, "nobody sudo"
 
   print "\nFiring up the practice server.\nFor instructions, go to http://localhost:#{port}/\n\n\n"
   Thin::Server.new "127.0.0.1", port  do

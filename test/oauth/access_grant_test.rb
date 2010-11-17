@@ -148,7 +148,7 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "authorization code for different client" do
     setup do
-      grant = Server::AccessGrant.create("foo bar", "read write", "4cc7bc483321e814b8000000", nil)
+      grant = Server::AccessGrant.create("foo bar", Server.register(:scope=>%w{read write}), "read write", nil)
       request_access_token :code=>grant.code
     end
     should_return_error :invalid_grant
@@ -169,7 +169,8 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "no redirect URI to match" do
     setup do
-      grant = Server::AccessGrant.create("foo bar", "read write", client.id, nil)
+      @client = Server.register(:display_name=>"No rediret", :scope=>"read write")
+      grant = Server::AccessGrant.create("foo bar", client, "read write", nil)
       request_access_token :code=>grant.code, :redirect_uri=>"http://uberclient.dot/oz"
     end
     should_respond_with_access_token
@@ -206,9 +207,9 @@ class AccessGrantTest < Test::Unit::TestCase
   context "authenticator with 4 parameters" do
     setup do
       @old = config.authenticator
-      config.authenticator = lambda do |username, password, client_id, scopes|
+      config.authenticator = lambda do |username, password, client_id, scope|
         @client_id = client_id
-        @scopes = scopes
+        @scope = scope
         "Batman"
       end
       request_with_username_password "cowbell", "more", "read"
@@ -218,8 +219,8 @@ class AccessGrantTest < Test::Unit::TestCase
     should "receive client identifier" do
       assert_equal client.id, @client_id
     end
-    should "receive scopes" do
-      assert_equal %w{read}, @scopes
+    should "receive scope" do
+      assert_equal %w{read}, @scope
     end
 
     teardown { config.authenticator = @old }

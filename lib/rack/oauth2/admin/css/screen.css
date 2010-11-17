@@ -312,10 +312,10 @@ table.tokens td.scope {
 .client .fields {
   float: left;
 }
-.client .scopes {
+.client .scope {
   float: right;
 }
-.client .scopes .non-common {
+.client .scope .uncommon {
   color: red;
 }
 .client hr {

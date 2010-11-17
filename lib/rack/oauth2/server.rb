@@ -35,8 +35,7 @@ module Rack
         # Registers and returns a new Client. Can also be used to update
         # existing client registration, by passing identifier (and secret) of
         # existing client record. That way, your setup script can create a new
-        # client application and run repeatedly without fail. Also useful for
-        # adding new scopes to your existing client application.
+        # client application and run repeatedly without fail.
         #
         # @param [Hash] args Arguments for registering client application
         # @option args [String] :id Client identifier. Use this to update
@@ -50,18 +49,19 @@ module Rack
         # name.
         # @option args [String] redirect_uri Redirect URL: authorization
         # requests for this client will always redirect back to this URL.
-        # @option args [Array] scopes Scopes that client application can request
+        # @option args [Array] scope Scope that client application can request
+        # (list of names).
         # @option args [Array] notes Free form text, for internal use.
         #
         # @example Registering new client application
         #   Server.register :display_name=>"My Application",
-        #     :link=>"http://example.com", :scopes=>%w{read write},
+        #     :link=>"http://example.com", :scope=>%w{read write},
         #     :redirect_uri=>"http://example.com/oauth/callback"
         # @example Migration using configuration file
         #   config = YAML.load_file(Rails.root + "config/oauth.yml")
         #   Server.register config["id"], config["secret"],
         #     :display_name=>"My  Application", :link=>"http://example.com",
-        #     :scopes=>config["scopes"],
+        #     :scope=>config["scope"],
         #     :redirect_uri=>"http://example.com/oauth/callback"
         def register(args)
           if args[:id] && args[:secret] && (client = get_client(args[:id]))
@@ -70,6 +70,19 @@ module Rack
           else
             Client.create(args)
           end
+        end
+
+        # Creates and returns a new access grant. Actually, returns only the
+        # authorization code which you can turn into an access token by
+        # making a request to /oauth/access_token.
+        #
+        # @param [String] identity User ID, account ID, etc
+        # @param [String] client_id Client identifier
+        # @param [Array, nil] scope Array of string, nil if you want 'em all
+        # @return [String] Access grant authorization code
+        def access_grant(identity, client_id, scope = nil)
+          client = get_client(client_id) or fail "No such client"
+          AccessGrant.create(identity, client, scope || client.scope).code
         end
 
         # Returns AccessToken from token.
@@ -81,15 +94,16 @@ module Rack
         end
 
         # Returns AccessToken for the specified identity, client application and
-        # scopes. You can use this method to request existing access token, new
+        # scope. You can use this method to request existing access token, new
         # token generated if one does not already exists.
         #
         # @param [String] identity Identity, e.g. user ID, account ID
         # @param [String] client_id Client application identifier
-        # @param [String] scope Access scope (e.g. "read write")
-        # @return [AccessToken]
-        def get_token_for(identity, client_id, scope)
-          AccessToken.get_token_for(identity, client_id, scope)
+        # @param [Array, nil] scope Array of names, nil if you want 'em all
+        # @return [String] Access token
+        def token_for(identity, client_id, scope = nil)
+          client = get_client(client_id) or fail "No such client"
+          AccessToken.get_token_for(identity, client, scope || client.scope).token
         end
 
         # Returns all AccessTokens for an identity.
@@ -194,8 +208,8 @@ module Rack
             # and return appropriate WWW-Authenticate header.
             response = @app.call(env)
             if response[0] == 403
-              scopes = Utils.normalize_scopes(response[1]["oauth.no_scope"])
-              challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scopes.join(" ")]
+              scope = Utils.normalize_scope(response[1]["oauth.no_scope"])
+              challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scope.join(" ")]
               response[1]["WWW-Authenticate"] = challenge
               return response
             else
@@ -238,7 +252,7 @@ module Rack
             response_type = auth_request.response_type # Needed for error handling
             client = self.class.get_client(auth_request.client_id)
             # Pass back to application, watch for 403 (deny!)
-            logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope}" if logger
+            logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope.join(" ")}" if logger
             request.env["oauth.authorization"] = auth_request.id.to_s
             response = @app.call(request.env)
             raise AccessDeniedError if response[0] == 403
@@ -259,12 +273,12 @@ module Rack
             client = get_client(request)
             raise RedirectUriMismatchError unless client.redirect_uri.nil? || client.redirect_uri == redirect_uri.to_s
             raise UnsupportedResponseTypeError unless options.authorization_types.include?(response_type)
-            requested_scope = Utils.normalize_scopes(request.GET["scope"])
-            allowed_scopes = client.scopes
-            raise InvalidScopeError unless (requested_scope - allowed_scopes).empty?
+            requested_scope = Utils.normalize_scope(request.GET["scope"])
+            allowed_scope = client.scope
+            raise InvalidScopeError unless (requested_scope - allowed_scope).empty?
             # Create object to track authorization request and let application
             # handle the rest.
-            auth_request = AuthRequest.create(client.id, requested_scope, redirect_uri.to_s, response_type, state)
+            auth_request = AuthRequest.create(client, requested_scope, redirect_uri.to_s, response_type, state)
             uri = URI.parse(request.url)
             uri.query = "authorization=#{auth_request.id.to_s}"
             return [303, { "Location"=>uri.to_s }, ["You are being redirected"]]
@@ -336,14 +350,14 @@ module Rack
             # 4.1.2.  Resource Owner Password Credentials
             username, password = request.POST.values_at("username", "password")
             raise InvalidGrantError unless username && password
-            requested_scope = Utils.normalize_scopes(request.POST["scope"])
-            allowed_scopes = client.scopes
-            raise InvalidScopeError unless (requested_scope - allowed_scopes).empty?
+            requested_scope = Utils.normalize_scope(request.POST["scope"])
+            allowed_scope = client.scope
+            raise InvalidScopeError unless (requested_scope - allowed_scope).empty?
             args = [username, password]
             args << client.id << requested_scope unless options.authenticator.arity == 2
             identity = options.authenticator.call(*args)
             raise InvalidGrantError unless identity
-            access_token = AccessToken.get_token_for(identity, client.id, requested_scope)
+            access_token = AccessToken.get_token_for(identity, client, requested_scope)
           else
             raise UnsupportedGrantType
           end

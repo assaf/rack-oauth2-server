@@ -26,19 +26,19 @@
     {{if id}}<button>Save Changes</button>
     {{else}}<button>Create Client</button>{{/if}}
   </div>
-  <div class="scopes">
-    <h2>Scopes</h2>
+  <div class="scope">
+    <h2>Scope</h2>
     {{each common}}
-      <label class="check"><input type="checkbox" name="scopes" value="${this}" ${scopes.indexOf(this.toString()) < 0 ? null : "checked"}>${this}</label>
+      <label class="check"><input type="checkbox" name="scope" value="${this}" ${scope.indexOf(this.toString()) < 0 ? null : "checked"}>${this}</label>
     {{/each}}
-    {{each scopes}}
+    {{each scope}}
       {{if common.indexOf(this.toString()) < 0}}
-      <label class="check non-common"><input type="checkbox" name="scopes" value="${this}" checked>${this}</label>
+      <label class="check uncommon"><input type="checkbox" name="scope" value="${this}" checked>${this}</label>
       {{/if}}
     {{/each}}
     <label>Uncommon
-      <input type="text" name="scopes" value="" size="35">
-      <p class="hint">Space separated list of uncommon scopes.</p>
+      <input type="text" name="scope" value="" size="35">
+      <p class="hint">Space separated list of uncommon scope.</p>
     </label>
   </div>
   <hr>

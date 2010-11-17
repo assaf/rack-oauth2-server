@@ -15,12 +15,11 @@ module Rack
           end
 
           # Get an access token (create new one if necessary).
-          def get_token_for(identity, client_id, scope)
-            scope = Utils.normalize_scopes(scope)
-            client_id = BSON::ObjectId(client_id.to_s)
-            unless token = collection.find_one({ :identity=>identity.to_s, :scope=>scope, :client_id=>client_id, :revoked=>nil })
+          def get_token_for(identity, client, scope)
+            scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
+            unless token = collection.find_one({ :identity=>identity.to_s, :scope=>scope, :client_id=>client.id, :revoked=>nil })
               token = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope,
-                        :client_id=>client_id, :created_at=>Time.now.utc.to_i,
+                        :client_id=>client.id, :created_at=>Time.now.utc.to_i,
                         :expires_at=>nil, :revoked=>nil }
               collection.insert token
             end
@@ -83,7 +82,7 @@ module Rack
         attr_reader :identity
         # Client that was granted this access token.
         attr_reader :client_id
-        # The scope granted in this token.
+        # The scope granted to this token.
         attr_reader :scope
         # When token was granted.
         attr_reader :created_at

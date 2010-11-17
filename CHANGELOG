@@ -1,14 +1,29 @@
 2010-11-16 version 2.0.0
 
-Major change: you are no longer able to get an access token with the scope if
-the client is not registered to have this scope. The global setting scopes is
-gone (not backward compatible). You will need to manually add scopes to your
-clients, e.g. in mogno console:
+MAJOR CHANGE:
+Keeping with OAuth 2.0 spec terminology, we'll call it scope all around. Some
+places in the API that previously used "scopes" have been changed to "scope".
+
+OTOH, the scope is not consistently stored and returned as array of names,
+previous was stored as comma-separated string, and often returned as such.
+Whatever you have stored with pre 2.0 will probably not work with 2.0 and
+forward.
+
+Clients now store their scope, and only those names are allowed in access
+tokens. The global setting oauth.scope is no longer in use. Forget about it.
+Add a scope to your clients, like this:
 
   db.oauth2.clients.update({}, { $set: { scopes: ["read", "write"] } }, true, true)
 
-Rack::OAuth2::Server class methods get register -- for registering and updating
-client application record -- and get_token_for -- to obtain new/existing token.
+
+Use Rack::OAuth2::Server token_for and access_grant to generate access tokens
+and access grants, respectively. These are mighty useful if you're using the
+OAuth 2.0 infrastructure, but have different ways for authorizing, e.g. using
+access tokens instead of cookies.
+
+Rack::OAuth2::Server method register to register new client applications and
+update existing records. This method is idempotent, so you can use it in rake
+db:seed, deploy scripts, migrations, etc.
 
 If your authenticator accepts four arguments, it will receive, in addition to
 username and password, also the client identifier and requested scopes.
