@@ -148,7 +148,7 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "authorization code for different client" do
     setup do
-      grant = Rack::OAuth2::Server::AccessGrant.create("foo bar", "read write", "4cc7bc483321e814b8000000", nil)
+      grant = Server::AccessGrant.create("foo bar", "read write", "4cc7bc483321e814b8000000", nil)
       request_access_token :code=>grant.code
     end
     should_return_error :invalid_grant
@@ -156,7 +156,7 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "authorization code revoked" do
     setup do
-      Rack::OAuth2::Server::AccessGrant.from_code(@code).revoke!
+      Server::AccessGrant.from_code(@code).revoke!
       request_access_token
     end
     should_return_error :invalid_grant
@@ -169,7 +169,7 @@ class AccessGrantTest < Test::Unit::TestCase
 
   context "no redirect URI to match" do
     setup do
-      grant = Rack::OAuth2::Server::AccessGrant.create("foo bar", "read write", client.id, nil)
+      grant = Server::AccessGrant.create("foo bar", "read write", client.id, nil)
       request_access_token :code=>grant.code, :redirect_uri=>"http://uberclient.dot/oz"
     end
     should_respond_with_access_token
@@ -202,6 +202,29 @@ class AccessGrantTest < Test::Unit::TestCase
     setup { request_with_username_password "cowbell", "more", "read write math" }
     should_return_error :invalid_scope
   end
+
+  context "authenticator with 4 parameters" do
+    setup do
+      @old = config.authenticator
+      config.authenticator = lambda do |username, password, client_id, scopes|
+        @client_id = client_id
+        @scopes = scopes
+        "Batman"
+      end
+      request_with_username_password "cowbell", "more", "read"
+    end
+
+    should_respond_with_access_token "read"
+    should "receive client identifier" do
+      assert_equal client.id, @client_id
+    end
+    should "receive scopes" do
+      assert_equal %w{read}, @scopes
+    end
+
+    teardown { config.authenticator = @old }
+  end
+
 
   # 4.2.  Access Token Response
 

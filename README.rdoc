@@ -88,6 +88,16 @@ access tokens by passing the end-user's username/password, then you need an
 authenticator. This feature is necessary for some client applications, and
 quite handy during development/testing.
 
+The authenticator is a block that receives either two or four parameters.  The
+first two are username and password. The other two are the client identifier
+and scope. It authenticated, it returns an identity, otherwise it can return
+nil or false. For example:
+
+  oauth.authenticator = lambda do |username, password|
+    user = User.find_by_username(username)
+    user if user && user.authenticated?(password)
+  end
+
 
 === Step 3: Let Users Authorize
 

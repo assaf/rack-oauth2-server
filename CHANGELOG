@@ -10,8 +10,11 @@ clients, e.g. in mogno console:
 Rack::OAuth2::Server class methods get register -- for registering and updating
 client application record -- and get_token_for -- to obtain new/existing token.
 
+If your authenticator accepts four arguments, it will receive, in addition to
+username and password, also the client identifier and requested scopes.
+
 Web console now allows you to set/unset individual scopes for each client
-application.
+application, and store a note on each client.
 
 Added Sammy.js OAuth 2.0 plugin.
 

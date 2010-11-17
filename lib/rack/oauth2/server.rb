@@ -122,6 +122,15 @@ module Rack
       #   Defaults to use the request host name.
       # - :logger -- The logger to use. Under Rails, defaults to use the Rails
       #   logger.  Will use Rack::Logger if available.
+      #
+      # Authenticator is a block that receives either two or four parameters.
+      # The first two are username and password. The other two are the client
+      # identifier and scope. It authenticated, it returns an identity,
+      # otherwise it can return nil or false. For example:
+      #   oauth.authenticator = lambda do |username, password|
+      #     user = User.find_by_username(username)
+      #     user if user && user.authenticated?(password)
+      #   end
       Options = Struct.new(:access_token_path, :authenticator, :authorization_types,
         :authorize_path, :database, :host, :param_authentication, :path, :realm, :logger)
 
@@ -327,11 +336,13 @@ module Rack
             # 4.1.2.  Resource Owner Password Credentials
             username, password = request.POST.values_at("username", "password")
             raise InvalidGrantError unless username && password
-            identity = options.authenticator.call(username, password)
-            raise InvalidGrantError unless identity
             requested_scope = Utils.normalize_scopes(request.POST["scope"])
             allowed_scopes = client.scopes
             raise InvalidScopeError unless (requested_scope - allowed_scopes).empty?
+            args = [username, password]
+            args << client.id << requested_scope unless options.authenticator.arity == 2
+            identity = options.authenticator.call(*args)
+            raise InvalidGrantError unless identity
             access_token = AccessToken.get_token_for(identity, client.id, requested_scope)
           else
             raise UnsupportedGrantType
