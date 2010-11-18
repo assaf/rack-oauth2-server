@@ -57,7 +57,7 @@ module Rack
         # successful in returning access token, futher requests raise
         # InvalidGrantError.
         def authorize!
-          raise InvalidGrantError if self.access_token || self.revoked
+          raise InvalidGrantError, "You can't use the same access grant twice" if self.access_token || self.revoked
           client = Client.find(client_id) or raise InvalidGrantError
           access_token = AccessToken.get_token_for(identity, client, scope)
           self.access_token = access_token.token

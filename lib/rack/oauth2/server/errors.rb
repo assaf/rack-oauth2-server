@@ -42,7 +42,7 @@ module Rack
       # assertion, expired authorization token, bad end-user password credentials,
       # or mismatching authorization code and redirection URI).
       class InvalidGrantError < OAuthError
-        def initialize(message)
+        def initialize(message = nil)
           super :invalid_grant, message || "This access grant is no longer valid."
         end
       end

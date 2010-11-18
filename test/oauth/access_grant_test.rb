@@ -185,6 +185,13 @@ class AccessGrantTest < Test::Unit::TestCase
     should_return_error :invalid_grant
   end
 
+  context "access grant spent" do
+    setup do
+      request_access_token
+      request_access_token
+    end
+    should_return_error :invalid_grant
+  end
 
   # 4.1.2.  Resource Owner Password Credentials
 
