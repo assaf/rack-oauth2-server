@@ -194,13 +194,13 @@ module Rack
               raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.utc
               request.env["oauth.access_token"] = token
               request.env["oauth.identity"] = access_token.identity
-              logger.info "Authorized #{access_token.identity}" if logger
+              logger.info "RO2S: Authorized #{access_token.identity}" if logger
             rescue OAuthError=>error
               # 5.2.  The WWW-Authenticate Response Header Field
-              logger.info "HTTP authorization failed #{error.code}" if logger
+              logger.info "RO2S: HTTP authorization failed #{error.code}" if logger
               return unauthorized(request, error)
             rescue =>ex
-              logger.info "HTTP authorization failed #{ex.message}" if logger
+              logger.info "RO2S: HTTP authorization failed #{ex.message}" if logger
               return unauthorized(request)
             end
 
@@ -246,13 +246,13 @@ module Rack
           if request.GET["authorization"]
             auth_request = self.class.get_auth_request(request.GET["authorization"]) rescue nil
             if !auth_request || auth_request.revoked
-              logger.error "Invalid authorization request #{auth_request}" if logger
+              logger.error "RO2S: Invalid authorization request #{auth_request}" if logger
               return bad_request("Invalid authorization request")
             end
             response_type = auth_request.response_type # Needed for error handling
             client = self.class.get_client(auth_request.client_id)
             # Pass back to application, watch for 403 (deny!)
-            logger.info "Request #{auth_request.id}: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope.join(" ")}" if logger
+            logger.info "RO2S: Client #{client.display_name} requested #{auth_request.response_type} with scope #{auth_request.scope.join(" ")}" if logger
             request.env["oauth.authorization"] = auth_request.id.to_s
             response = @app.call(request.env)
             raise AccessDeniedError if response[0] == 403
@@ -264,7 +264,7 @@ module Rack
             begin
               redirect_uri = Utils.parse_redirect_uri(request.GET["redirect_uri"])
             rescue InvalidRequestError=>error
-              logger.error "Authorization request with invalid redirect_uri: #{request.GET["redirect_uri"]} #{error.message}" if logger
+              logger.error "RO2S: Authorization request with invalid redirect_uri: #{request.GET["redirect_uri"]} #{error.message}" if logger
               return bad_request(error.message)
             end
 
@@ -284,7 +284,7 @@ module Rack
             return [303, { "Location"=>uri.to_s }, ["You are being redirected"]]
           end
         rescue OAuthError=>error
-          logger.error "Authorization request error: #{error.code} #{error.message}" if logger
+          logger.error "RO2S: Authorization request error #{error.code}: #{error.message}" if logger
           params = { :error=>error.code, :error_description=>error.message, :state=>state }
           if response_type == "token"
             redirect_uri.fragment = Rack::Utils.build_query(params)
@@ -311,20 +311,20 @@ module Rack
         # 3.1.  Authorization Response
         if auth_request.response_type == "code"
           if auth_request.grant_code
-            logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access code #{auth_request.grant_code}" if logger
+            logger.info "RO2S: Client #{auth_request.client_id} granted access code #{auth_request.grant_code}" if logger
             params = { :code=>auth_request.grant_code, :scope=>auth_request.scope.join(" "), :state=>auth_request.state }
           else
-            logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization" if logger
+            logger.info "RO2S: Client #{auth_request.client_id} denied authorization" if logger
             params = { :error=>:access_denied, :state=>auth_request.state }
           end
           params = Rack::Utils.parse_query(redirect_uri.query).merge(params)
           redirect_uri.query = Rack::Utils.build_query(params)
         else # response type if token
           if auth_request.access_token
-            logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} granted access token #{auth_request.access_token}" if logger
+            logger.info "RO2S: Client #{auth_request.client_id} granted access token #{auth_request.access_token}" if logger
             params = { :access_token=>auth_request.access_token, :scope=>auth_request.scope.join(" "), :state=>auth_request.state }
           else
-            logger.info "Request #{auth_request.id}: Client #{auth_request.client_id} denied authorization" if logger
+            logger.info "RO2S: Client #{auth_request.client_id} denied authorization" if logger
             params = { :error=>:access_denied, :state=>auth_request.state }
           end
           redirect_uri.fragment = Rack::Utils.build_query(params)
@@ -361,16 +361,16 @@ module Rack
           else
             raise UnsupportedGrantType
           end
-          logger.info "Access token #{access_token.token} granted to client #{client.display_name}, identity #{access_token.identity}" if logger
+          logger.info "RO2S: Access token #{access_token.token} granted to client #{client.display_name}, identity #{access_token.identity}" if logger
           response = { :access_token=>access_token.token }
           response[:scope] = access_token.scope.join(" ")
-          return [200, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, response.to_json]
+          return [200, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, [response.to_json]]
           # 4.3.  Error Response
         rescue OAuthError=>error
-          logger.error "Access token request error: #{error.code} #{error.message}" if logger
+          logger.error "RO2S: Access token request error #{error.code}: #{error.message}" if logger
           return unauthorized(request, error) if InvalidClientError === error && request.basic?
           return [400, { "Content-Type"=>"application/json", "Cache-Control"=>"no-store" }, 
-                  { :error=>error.code, :error_description=>error.message }.to_json]
+                  [{ :error=>error.code, :error_description=>error.message }.to_json]]
         end
       end
 
