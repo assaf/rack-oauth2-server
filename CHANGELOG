@@ -1,4 +1,4 @@
-2010-11-16 version 2.0.0
+2010-11-18 version 2.0.0
 
 MAJOR CHANGE:
 Keeping with OAuth 2.0 spec terminology, we'll call it scope all around. Some

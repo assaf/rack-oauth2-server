@@ -21,7 +21,7 @@ module Rack
             fields = { :client_id=>client.id, :scope=>scope, :redirect_uri=>client.redirect_uri || redirect_uri,
                        :response_type=>response_type, :state=>state,
                        :grant_code=>nil, :authorized_at=>nil,
-                       :created_at=>Time.now.utc.to_i, :revoked=>nil }
+                       :created_at=>Time.now.to_i, :revoked=>nil }
             fields[:_id] = collection.insert(fields)
             Server.new_instance self, fields
           end
@@ -60,7 +60,7 @@ module Rack
           raise ArgumentError, "Must supply a identity" unless identity
           return if revoked
           client = Client.find(client_id) or return
-          self.authorized_at = Time.now.utc.to_i
+          self.authorized_at = Time.now.to_i
           if response_type == "code" # Requested authorization code
             access_grant = AccessGrant.create(identity, client, scope, redirect_uri)
             self.grant_code = access_grant.code
@@ -75,7 +75,7 @@ module Rack
 
         # Deny access.
         def deny!
-          self.authorized_at = Time.now.utc.to_i
+          self.authorized_at = Time.now.to_i
           self.class.collection.update({ :_id=>id }, { :$set=>{ :authorized_at=>authorized_at } })
         end
 

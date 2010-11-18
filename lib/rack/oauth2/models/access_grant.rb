@@ -12,11 +12,13 @@ module Rack
           end
 
           # Create a new access grant.
-          def create(identity, client, scope, redirect_uri = nil)
+          def create(identity, client, scope, redirect_uri = nil, expires = nil)
             scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
+            expires_at = Time.now.to_i + (expires || 300)
             fields = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope,
                        :client_id=>client.id, :redirect_uri=>client.redirect_uri || redirect_uri,
-                       :created_at=>Time.now.utc.to_i, :granted_at=>nil, :access_token=>nil, :revoked=>nil }
+                       :created_at=>Time.now.to_i, :expires_at=>expires_at, :granted_at=>nil,
+                       :access_token=>nil, :revoked=>nil }
             collection.insert fields
             Server.new_instance self, fields
           end
@@ -41,6 +43,8 @@ module Rack
         attr_reader :created_at
         # Tells us when (and if) access token was created.
         attr_accessor :granted_at
+        # Tells us when this grant expires.
+        attr_accessor :expires_at
         # Access token created from this grant. Set and spent.
         attr_accessor :access_token
         # Timestamp if revoked.
@@ -57,7 +61,7 @@ module Rack
           client = Client.find(client_id) or raise InvalidGrantError
           access_token = AccessToken.get_token_for(identity, client, scope)
           self.access_token = access_token.token
-          self.granted_at = Time.now.utc.to_i
+          self.granted_at = Time.now.to_i
           self.class.collection.update({ :_id=>code, :access_token=>nil, :revoked=>nil }, { :$set=>{ :granted_at=>granted_at, :access_token=>access_token.token } }, :safe=>true)
           reload = self.class.collection.find_one({ :_id=>code, :revoked=>nil }, { :fields=>%w{access_token} })
           raise InvalidGrantError unless reload && reload["access_token"] == access_token.token
@@ -65,7 +69,7 @@ module Rack
         end
 
         def revoke!
-          self.revoked = Time.now.utc.to_i
+          self.revoked = Time.now.to_i
           self.class.collection.update({ :_id=>code, :revoked=>nil }, { :$set=>{ :revoked=>revoked } })
         end
 

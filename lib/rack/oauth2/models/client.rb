@@ -30,7 +30,7 @@ module Rack
             fields =  { :display_name=>args[:display_name], :link=>args[:link],
                         :image_url=>args[:image_url], :redirect_uri=>redirect_uri,
                         :nodes=>args[:notes].to_s, :scope=>scope,
-                        :created_at=>Time.now.utc.to_i, :revoked=>nil }
+                        :created_at=>Time.now.to_i, :revoked=>nil }
             if args[:id] && args[:secret]
               fields[:_id], fields[:secret] = BSON::ObjectId(args[:id].to_s), args[:secret]
               collection.insert(fields, :safe=>true)
@@ -95,7 +95,7 @@ module Rack
         # Revoke all authorization requests, access grants and access tokens for
         # this client. Ward off the evil.
         def revoke!
-          self.revoked = Time.now.utc.to_i
+          self.revoked = Time.now.to_i
           Client.collection.update({ :_id=>id }, { :$set=>{ :revoked=>revoked } })
           AuthRequest.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })
           AccessGrant.collection.update({ :client_id=>id }, { :$set=>{ :revoked=>revoked } })

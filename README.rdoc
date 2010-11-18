@@ -332,7 +332,7 @@ I'll let you figure that one for yourself.
 
 We haz it, and it's pretty rad:
 
-http://github.com/downloads/flowtown/rack-oauth2-server/OAuth%20Console%20-%20All%20Clients.png
+http://labnotes.org/wp-content/uploads/2010/11/OAuth-Admin-All-Clients.png
 
 To get the Web admin running, you'll need to do the following. First, you'll
 need to register a new client application that can access the OAuth Web admin,
@@ -477,6 +477,30 @@ If you create +.curlrc+ in your home directory, +curl+ will automatically load i
 Convenient, but dangerous, you might end up sending the access token to any
 server you +curl+. Useful for development, testing, just don't use it with any
 production access tokens.
+
+
+== Methods You'll Want To Use From Your App
+
+You can use the Server module to create, fetch and otherwise work with access
+tokens and grants. Available methods include:
+
+- access_grant -- Creates and returns a new access grant. You can use that for
+  one-time token, e.g. users who forgot their password and need to login using
+  an email message.
+- token_for -- Returns access token for particular identity. You can use that to
+  give access tokens to clients other than through the OAuth 2.0 protocol, e.g.
+  if you let users authenticate using Facebook Connect or Twitter OAuth.
+- get_access_token -- Resolves access token (string) into access token
+  (AccessToken object).
+- list_access_tokens -- Returns all access tokens for a given identity, which
+  you'll need if you offer a UI for uses to review and revoke access tokens they
+  previously granted.
+- get_client -- Resolves client identifier into a Client object.
+- register -- Registers a new client application. Can also be used to change
+  existing registration (if you know the client's ID and secret). Idempotent, so
+  perfect for running during setup and migration.
+- get_auth_request -- Resolves authorization request handle into an AuthRequest
+  object. Could be useful during the authorization flow.
 
 
 == Mandatory ASCII Diagram

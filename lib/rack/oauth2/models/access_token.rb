@@ -19,7 +19,7 @@ module Rack
             scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
             unless token = collection.find_one({ :identity=>identity.to_s, :scope=>scope, :client_id=>client.id, :revoked=>nil })
               token = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope,
-                        :client_id=>client.id, :created_at=>Time.now.utc.to_i,
+                        :client_id=>client.id, :created_at=>Time.now.to_i,
                         :expires_at=>nil, :revoked=>nil }
               collection.insert token
             end
@@ -48,7 +48,7 @@ module Rack
           def count(filter = {})
             select = {}
             if filter[:days]
-              now = Time.now.utc.to_i
+              now = Time.now.to_i
               range = { :$gt=>now - filter[:days] * 86400, :$lte=>now }
               select[ filter[:revoked] ? :revoked : :created_at ] = range
             elsif filter.has_key?(:revoked)
@@ -93,7 +93,7 @@ module Rack
 
         # Revokes this access token.
         def revoke!
-          self.revoked = Time.now.utc.to_i
+          self.revoked = Time.now.to_i
           AccessToken.collection.update({ :_id=>token }, { :$set=>{ :revoked=>revoked } })
         end
         

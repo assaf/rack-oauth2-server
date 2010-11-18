@@ -166,6 +166,50 @@ class ServerTest < Test::Unit::TestCase
       end
     end
 
+    context "no expiration" do
+      setup do
+        @code = Server.access_grant("Batman", client.id)
+      end
+
+      should "not expire in a minute" do
+        Timecop.travel 60 do
+          basic_authorize client.id, client.secret
+          post "/oauth/access_token", :scope=>"read", :grant_type=>"authorization_code", :code=>@code, :redirect_uri=>client.redirect_uri
+          assert_equal 200, last_response.status
+        end
+      end
+
+      should "expire after 5 minutes" do
+        Timecop.travel 300 do
+          basic_authorize client.id, client.secret
+          post "/oauth/access_token", :scope=>"read", :grant_type=>"authorization_code", :code=>@code, :redirect_uri=>client.redirect_uri
+          assert_equal 400, last_response.status
+        end
+      end
+    end
+
+    context "expiration set" do
+      setup do
+        @code = Server.access_grant("Batman", client.id, nil, 1800)
+      end
+
+      should "not expire prematurely" do
+        Timecop.travel 1750 do
+          basic_authorize client.id, client.secret
+          post "/oauth/access_token", :scope=>"read", :grant_type=>"authorization_code", :code=>@code, :redirect_uri=>client.redirect_uri
+          assert_equal 200, last_response.status
+        end
+      end
+
+      should "expire after specified seconds" do
+        Timecop.travel 1800 do
+          basic_authorize client.id, client.secret
+          post "/oauth/access_token", :scope=>"read", :grant_type=>"authorization_code", :code=>@code, :redirect_uri=>client.redirect_uri
+          assert_equal 400, last_response.status
+        end
+      end
+    end
+
   end
 
 

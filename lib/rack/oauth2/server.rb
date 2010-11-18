@@ -79,10 +79,12 @@ module Rack
         # @param [String] identity User ID, account ID, etc
         # @param [String] client_id Client identifier
         # @param [Array, nil] scope Array of string, nil if you want 'em all
+        # @param [Integer, nil] expires How many seconds before access grant
+        # expires (default to 5 minutes)
         # @return [String] Access grant authorization code
-        def access_grant(identity, client_id, scope = nil)
+        def access_grant(identity, client_id, scope = nil, expires = nil)
           client = get_client(client_id) or fail "No such client"
-          AccessGrant.create(identity, client, scope || client.scope).code
+          AccessGrant.create(identity, client, scope || client.scope, nil, expires).code
         end
 
         # Returns AccessToken from token.
@@ -191,7 +193,7 @@ module Rack
             begin
               access_token = AccessToken.from_token(token)
               raise InvalidTokenError if access_token.nil? || access_token.revoked
-              raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.utc
+              raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.to_i
               request.env["oauth.access_token"] = token
               request.env["oauth.identity"] = access_token.identity
               logger.info "RO2S: Authorized #{access_token.identity}" if logger
@@ -344,6 +346,7 @@ module Rack
             grant = AccessGrant.from_code(request.POST["code"])
             raise InvalidGrantError, "Wrong client" unless grant && client.id == grant.client_id
             raise InvalidGrantError, "Wrong redirect URI" unless grant.redirect_uri.nil? || grant.redirect_uri == Utils.parse_redirect_uri(request.POST["redirect_uri"]).to_s
+            raise InvalidGrantError, "This access grant expired" if grant.expires_at && grant.expires_at <= Time.now.to_i
             access_token = grant.authorize!
           when "password"
             raise UnsupportedGrantType unless options.authenticator

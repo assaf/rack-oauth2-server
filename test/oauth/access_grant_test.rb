@@ -176,6 +176,15 @@ class AccessGrantTest < Test::Unit::TestCase
     should_respond_with_access_token
   end
 
+  context "access grant expired" do
+    setup do
+      Timecop.travel 300 do
+        request_access_token
+      end
+    end
+    should_return_error :invalid_grant
+  end
+
 
   # 4.1.2.  Resource Owner Password Credentials
 
