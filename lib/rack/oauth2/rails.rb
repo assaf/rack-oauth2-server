@@ -53,6 +53,14 @@ module Rack
         def oauth
           @oauth ||= Rack::OAuth2::Server::Helper.new(request, response)
         end
+
+        # Filter that denies access if the request is not authenticated. If you
+        # do not specify a scope, the class method oauth_required will use this
+        # filter; you can set the filter in a parent class and skip it in child
+        # classes that need special handling.
+        def oauth_required
+          head oauth.no_access! unless oauth.authenticated?
+        end
       end
 
       # Filter methods available in controller.
@@ -64,15 +72,18 @@ module Rack
         # @param [Hash] options Accepts before_filter options like :only and
         # :except, and the :scope option.
         def oauth_required(options = {})
-          scope = options.delete(:scope)
-          before_filter options do |controller|
-            if controller.oauth.authenticated?
-              if scope && !controller.oauth.scope.include?(scope)
-                controller.send :head, controller.oauth.no_scope!(scope)
+          if scope = options.delete(:scope)
+            before_filter options do |controller|
+              if controller.oauth.authenticated?
+                if !controller.oauth.scope.include?(scope)
+                  controller.send :head, controller.oauth.no_scope!(scope)
+                end
+              else
+                controller.send :head, controller.oauth.no_access!
               end
-            else
-              controller.send :head, controller.oauth.no_access!
             end
+          else
+            before_filter :oauth_required, options
           end
         end
       end
