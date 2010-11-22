@@ -23,6 +23,7 @@ module Rack
                         :client_id=>client.id, :created_at=>Time.now.to_i,
                         :expires_at=>nil, :revoked=>nil }
               collection.insert token
+              Client.collection.update({ :_id=>client.id }, { :$inc=>{ :tokens_granted=>1 } })
             end
             Server.new_instance self, token
           end
@@ -96,6 +97,7 @@ module Rack
         def revoke!
           self.revoked = Time.now.to_i
           AccessToken.collection.update({ :_id=>token }, { :$set=>{ :revoked=>revoked } })
+          Client.collection.update({ :_id=>client_id }, { :$inc=>{ :tokens_revoked=>1 } })
         end
         
         Server.create_indexes do

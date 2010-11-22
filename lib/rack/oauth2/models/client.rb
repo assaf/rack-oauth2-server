@@ -91,6 +91,10 @@ module Rack
         attr_reader :created_at
         # Timestamp if revoked.
         attr_accessor :revoked
+        # Counts how many access tokens were granted.
+        attr_reader :tokens_granted
+        # Counts how many access tokens were revoked.
+        attr_reader :tokens_revoked
 
         # Revoke all authorization requests, access grants and access tokens for
         # this client. Ward off the evil.
