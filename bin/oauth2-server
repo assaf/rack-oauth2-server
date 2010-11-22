@@ -57,6 +57,7 @@ when "setup"
   fail "No database. Use the --db option to tell us which database to use" unless Server.database
   puts "Where would you mount the Web console? This is a URL that must end with /admin,"
   puts "for example, http://example.com/oauth/admin"
+  print ": "
   uri = URI.parse($stdin.gets)
   begin
     uri.normalize!
@@ -143,6 +144,26 @@ when "practice"
     map("/oauth/admin") { run Server::Admin.new }
   end.start
 
+when "migrate"
+
+  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  puts "Set all clients to this scope (can change later by calling Client.register):"
+  print ": "
+  scope = $stdin.gets.strip.split
+  puts "Updating Client scope to #{scope.join(", ")}"
+  Server::Client.collection.find({ :scope=>{ :$exists=>false } }, :fields=>[]).each do |client|
+    update = { :scope=>scope,
+      :tokens_granted=>Server::AccessToken.count(:client_id=>client["_id"]),
+      :tokens_revoked=>Server::AccessToken.count(:client_id=>client["_id"], :revoked=>true) }
+    Server::Client.collection.update({ :_id=>client["_id"] }, { :$set=>update })
+  end
+  [Server::AccessToken, Server::AccessGrant, Server::AuthRequest].each do |mod|
+    puts "Updating #{mod.name} scope from string to array"
+    mod.collection.find({ :scope=>{ :$type=>2 } }, :fields=>[]).each do |token|
+      scope = token["scope"].split
+      mod.collection.update({ :_id=>token["_id"] }, { :$set=>{ :scope=>scope } })
+    end
+  end
 else
 
   print <<-TEXT
@@ -151,6 +172,7 @@ Version #{Server::VERSION}
 
 Commands:
   list            Lists all active clients
+  migrate         Run this when migrating from 1.x to 2.x
   practice        Runs a dummy OAuth 2.0 server, use this to test your OAuth 2.0 client
   register        Register a new client application
   setup           Create new admin account and help you setup the OAuth Web console
