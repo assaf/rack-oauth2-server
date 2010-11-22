@@ -114,7 +114,7 @@ button:active { background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(rgba(0
   height: 32px;
   vertical-align: bottom;
 }
-#header .signout {
+#header .signout, #header .signin {
   color: #C8E9F3;
   float: right;
   font-size: 11pt;

@@ -2,8 +2,17 @@ require "rake/testtask"
 
 spec = Gem::Specification.load(Dir["*.gemspec"].first)
 
+desc "Run this in development mode when updating the CoffeeScript file"
+task :coffee do
+  sh "coffee -w -o lib/rack/oauth2/admin/js/ lib/rack/oauth2/admin/js/application.coffee"
+end
+
+task :compile do
+  sh "coffee -c -l -o lib/rack/oauth2/admin/js/ lib/rack/oauth2/admin/js/application.coffee"
+end
+
 desc "Build the Gem"
-task :build do
+task :build=>:compile do
   sh "gem build #{spec.name}.gemspec"
 end
 

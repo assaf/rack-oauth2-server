@@ -6,3 +6,4 @@ doc
 test/rails/log
 *.lock
 test/*/log/test.log
+lib/rack/oauth2/admin/js/application.js
