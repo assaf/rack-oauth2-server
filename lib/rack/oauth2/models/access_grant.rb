@@ -13,9 +13,10 @@ module Rack
 
           # Create a new access grant.
           def create(identity, client, scope, redirect_uri = nil, expires = nil)
+            raise ArgumentError, "Identity must be String or Integer" unless String === identity || Integer === identity
             scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
             expires_at = Time.now.to_i + (expires || 300)
-            fields = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope,
+            fields = { :_id=>Server.secure_random, :identity=>identity, :scope=>scope,
                        :client_id=>client.id, :redirect_uri=>client.redirect_uri || redirect_uri,
                        :created_at=>Time.now.to_i, :expires_at=>expires_at, :granted_at=>nil,
                        :access_token=>nil, :revoked=>nil }

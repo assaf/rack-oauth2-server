@@ -76,7 +76,7 @@ module Rack
         # authorization code which you can turn into an access token by
         # making a request to /oauth/access_token.
         #
-        # @param [String] identity User ID, account ID, etc
+        # @param [String,Integer] identity User ID, account ID, etc
         # @param [String] client_id Client identifier
         # @param [Array, nil] scope Array of string, nil if you want 'em all
         # @param [Integer, nil] expires How many seconds before access grant
@@ -99,7 +99,7 @@ module Rack
         # scope. You can use this method to request existing access token, new
         # token generated if one does not already exists.
         #
-        # @param [String] identity Identity, e.g. user ID, account ID
+        # @param [String,Integer] identity Identity, e.g. user ID, account ID
         # @param [String] client_id Client application identifier
         # @param [Array, nil] scope Array of names, nil if you want 'em all
         # @return [String] Access token

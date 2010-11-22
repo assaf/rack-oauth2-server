@@ -16,9 +16,10 @@ module Rack
 
           # Get an access token (create new one if necessary).
           def get_token_for(identity, client, scope)
+            raise ArgumentError, "Identity must be String or Integer" unless String === identity || Integer === identity
             scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
-            unless token = collection.find_one({ :identity=>identity.to_s, :scope=>scope, :client_id=>client.id, :revoked=>nil })
-              token = { :_id=>Server.secure_random, :identity=>identity.to_s, :scope=>scope,
+            unless token = collection.find_one({ :identity=>identity, :scope=>scope, :client_id=>client.id, :revoked=>nil })
+              token = { :_id=>Server.secure_random, :identity=>identity, :scope=>scope,
                         :client_id=>client.id, :created_at=>Time.now.to_i,
                         :expires_at=>nil, :revoked=>nil }
               collection.insert token
