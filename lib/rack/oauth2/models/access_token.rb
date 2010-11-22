@@ -92,6 +92,19 @@ module Rack
         attr_reader :expires_at
         # Timestamp if revoked.
         attr_accessor :revoked
+        # Timestamp of last access using this token, rounded up to hour.
+        attr_accessor :last_access
+        # Timestamp of previous access using this token, rounded up to hour.
+        attr_accessor :prev_access
+
+        # Updates the last access timestamp.
+        def access!
+          today = (Time.now.to_i / 3600) * 3600
+          if last_access.nil? || last_access < today
+            AccessToken.collection.update({ :_id=>token }, { :$set=>{ :last_access=>today, :prev_access=>last_access } })
+            self.last_access = today
+          end
+        end
 
         # Revokes this access token.
         def revoke!
@@ -99,7 +112,7 @@ module Rack
           AccessToken.collection.update({ :_id=>token }, { :$set=>{ :revoked=>revoked } })
           Client.collection.update({ :_id=>client_id }, { :$inc=>{ :tokens_revoked=>1 } })
         end
-        
+
         Server.create_indexes do
           # Used to revoke all pending access grants when revoking client.
           collection.create_index [[:client_id, Mongo::ASCENDING]]

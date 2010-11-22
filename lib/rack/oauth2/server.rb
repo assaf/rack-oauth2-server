@@ -196,6 +196,7 @@ module Rack
               raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.to_i
               request.env["oauth.access_token"] = token
               request.env["oauth.identity"] = access_token.identity
+              access_token.access!
               logger.info "RO2S: Authorized #{access_token.identity}" if logger
             rescue OAuthError=>error
               # 5.2.  The WWW-Authenticate Response Header Field

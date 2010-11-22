@@ -161,7 +161,7 @@ table td {
 table tr:hover td {
   background: #ddf;
 }
-table td.created, table td.revoke {
+table td.created, table td.revoke, table td.accessed {
   width: 6em;
 }
 table tr.revoked td, table tr.revoked a {
@@ -209,6 +209,7 @@ table.tokens td.token {
   width: 36em;
 }
 table.tokens td.scope {
+  float: none;
 }
 
 .pagination {

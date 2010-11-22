@@ -29,6 +29,7 @@
       <th>Identity</th>
       <th>Scope</th>
       <th>Created</th>
+      <th>Accessed</th>
       <th>Revoked</th>
     </thead>
     <tbody>
@@ -38,6 +39,7 @@
         <td class="identity">{{if link}}<a href="${link}">${identity}</a>{{else}}${identity}{{/if}}</td>
         <td class="scope">${scope}</td>
         <td class="created">{{html $.shortdate(created)}}</td>
+        <td class="accessed">{{if last_access}}{{html $.shortdate(last_access)}}{{/if}}</td>
         <td class="revoke">
           {{if revoked}}
             {{html $.shortdate(revoked)}}
