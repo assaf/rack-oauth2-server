@@ -1,4 +1,4 @@
-2010-11-18 version 2.0.0
+2010-11-23 version 2.0.0
 
 MAJOR CHANGE:
 Keeping with OAuth 2.0 spec terminology, we'll call it scope all around. Some
@@ -11,9 +11,16 @@ forward.
 
 Clients now store their scope, and only those names are allowed in access
 tokens. The global setting oauth.scope is no longer in use. Forget about it.
-Add a scope to your clients, like this:
 
-  db.oauth2.clients.update({}, { $set: { scopes: ["read", "write"] } }, true, true)
+To migrate from 1.4.x to 2.0:
+
+  oauth2-server migrate --db <db name>
+
+Application client registrations will change from having no scope to having an
+empty scope, so you would want to update their registration, either using the
+Web console, or from your code:
+
+  Client.all.each { |client| client.update(:scope=>%w{read write}) }
 
 
 Use Rack::OAuth2::Server token_for and access_grant to generate access tokens
