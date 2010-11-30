@@ -354,7 +354,7 @@ module Rack
             # 4.1.2.  Resource Owner Password Credentials
             username, password = request.POST.values_at("username", "password")
             raise InvalidGrantError, "Missing username/password" unless username && password
-            requested_scope = Utils.normalize_scope(request.POST["scope"])
+            requested_scope = request.POST["scope"] ? Utils.normalize_scope(request.POST["scope"]) : client.scope
             allowed_scope = client.scope
             raise InvalidScopeError unless (requested_scope - allowed_scope).empty?
             args = [username, password]

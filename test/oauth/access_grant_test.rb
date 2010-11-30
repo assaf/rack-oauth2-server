@@ -76,9 +76,10 @@ class AccessGrantTest < Test::Unit::TestCase
     post "/oauth/access_token", params
   end
 
-  def request_with_username_password(username, password, scope = "read write")
+  def request_with_username_password(username, password, scope = nil)
     basic_authorize client.id, client.secret
-    params = { :grant_type=>"password", :scope=>scope }
+    params = { :grant_type=>"password" }
+    params[:scope] = scope if scope
     params[:username] = username if username
     params[:password] = password if password
     post "/oauth/access_token", params
@@ -211,8 +212,13 @@ class AccessGrantTest < Test::Unit::TestCase
   end
 
   context "no scope specified" do
-    setup { request_with_username_password "cowbell", "more", nil }
-    should_respond_with_access_token nil
+    setup { request_with_username_password "cowbell", "more" }
+    should_respond_with_access_token "oauth-admin read write"
+  end
+
+  context "given scope" do
+    setup { request_with_username_password "cowbell", "more", "read" }
+    should_respond_with_access_token "read"
   end
 
   context "unsupported scope" do

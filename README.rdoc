@@ -417,7 +417,7 @@ You can set the following options:
 - +scope+ -- Common scope shown and added by default to new clients (array of
   names, e.g. ["read", "write"]).
  
-== Web Admin API
+=== Web Admin API
 
 The OAuth Web admin is a single-page client application that operates by
 accessing the OAuth API. The API is mounted at /oauth/admin/api (basically /api
