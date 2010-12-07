@@ -69,6 +69,14 @@ class AccessGrantTest < Test::Unit::TestCase
     @code = Rack::Utils.parse_query(URI.parse(last_response["Location"]).query)["code"]
   end
 
+  def request_none(scope = nil)
+    basic_authorize client.id, client.secret
+    # Note: This grant_type becomes "client_credentials" in version 11 of the OAuth 2.0 spec
+    params = { :grant_type=>"none", :scope=>"read write" }
+    params[:scope] = scope if scope
+    post "/oauth/access_token", params
+  end
+
   def request_access_token(changes = nil)
     params = { :client_id=>client.id, :client_secret=>client.secret, :scope=>"read write",
                :grant_type=>"authorization_code", :code=>@code, :redirect_uri=>client.redirect_uri }.merge(changes || {})
@@ -133,7 +141,6 @@ class AccessGrantTest < Test::Unit::TestCase
     setup { request_access_token :grant_type=>"bogus" }
     should_return_error :unsupported_grant_type
   end
-
 
   # 4.1.1.  Authorization Code
 
@@ -250,6 +257,11 @@ class AccessGrantTest < Test::Unit::TestCase
 
 
   # 4.2.  Access Token Response
+
+  context "using none" do
+    setup { request_none }
+    should_respond_with_access_token "read write"
+  end
 
   context "using authorization code" do
     setup { request_access_token }

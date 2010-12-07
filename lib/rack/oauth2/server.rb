@@ -342,6 +342,10 @@ module Rack
         begin
           client = get_client(request)
           case request.POST["grant_type"]
+          when "none"
+            # 4.1 "none" access grant type (i.e. two-legged OAuth flow)
+            requested_scope = request.POST["scope"] ? Utils.normalize_scope(request.POST["scope"]) : client.scope
+            access_token = AccessToken.create_token_for(client, requested_scope)
           when "authorization_code"
             # 4.1.1.  Authorization Code
             grant = AccessGrant.from_code(request.POST["code"])
