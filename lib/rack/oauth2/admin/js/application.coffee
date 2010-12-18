@@ -4,7 +4,7 @@ Sammy "#main", (app) ->
   @.use Sammy.Title
   @.setTitle "OAuth Admin - "
   @.use Sammy.OAuth2
-  @.authorize = "#{document.location.pathname}/authorize"
+  @.authorize = document.location.pathname + "/authorize"
 
   # All XHR errors we don't catch explicitly handled here
   $(document).ajaxError (evt, xhr)->

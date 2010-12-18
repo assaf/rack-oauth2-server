@@ -9,12 +9,12 @@ module Rack
         #
         # Raises InvalidRequestError if not an absolute HTTP/S URL.
         def parse_redirect_uri(redirect_uri)
-          uri = URI.parse(redirect_uri).normalize
+          raise InvalidRequestError, "Missing redirect URL" unless redirect_uri
+          uri = URI.parse(redirect_uri).normalize rescue nil
+          raise InvalidRequestError, "Redirect URL looks fishy to me" unless uri
           raise InvalidRequestError, "Redirect URL must be absolute URL" unless uri.absolute? && uri.host
           raise InvalidRequestError, "Redirect URL must point to HTTP/S location" unless uri.scheme == "http" || uri.scheme == "https"
           uri
-        rescue
-          raise InvalidRequestError, "Redirect URL looks fishy to me"
         end
 
         # Given scope as either array or string, return array of same names,
