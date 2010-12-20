@@ -119,6 +119,7 @@ setting the :authorize option.
 
 when "practice"
 
+  require "logger"
   begin
     require "thin"
   rescue LoadError
@@ -134,9 +135,26 @@ when "practice"
     client = Server.register(:display_name=>"Practice OAuth Console", :image_url=>"#{admin_url}/images/oauth-2.png",
                              :link=>admin_url, :redirect_uri=>admin_url, :scope=>"oauth-admin")
   end
-  Server::Admin.set :client_id, client.id
-  Server::Admin.set :client_secret, client.secret
-  Server::Admin.set :scope, "nobody sudo"
+  Server::Admin.configure do |config|
+    logger = Logger.new(STDOUT)
+    logger.level = Logger::DEBUG
+    config.set :client_id, client.id
+    config.set :client_secret, client.secret
+    config.set :scope, "nobody sudo"
+    config.set :logger, logger
+    config.set :logging, true
+    config.set :dump_errors, true
+    config.oauth.logger = logger
+  end
+
+  Server::Practice.configure do |config|
+    logger = Logger.new(STDOUT)
+    logger.level = Logger::DEBUG
+    config.set :logger, logger
+    config.set :logging, true
+    config.set :dump_errors, true
+    config.oauth.logger = logger
+  end
 
   print "\nFiring up the practice server.\nFor instructions, go to http://localhost:#{port}/\n\n\n"
   Thin::Server.new "127.0.0.1", port  do
