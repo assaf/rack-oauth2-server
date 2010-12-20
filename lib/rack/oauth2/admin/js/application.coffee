@@ -192,6 +192,7 @@ $.shortdate = (integer)->
 # want to chart
 # series -- Name of the value we want to chart
 $.fn.chart = (data, series)->
+  return if typeof pv == "undefined" # no PV in test environment
   canvas = $(@)
   w = canvas.width()
   h = canvas.height()
