@@ -75,7 +75,7 @@ module Rack
         set :scope, []
 
 
-        set :logger, defined?(::Rails) && ::Rails.logger
+        set :logger, ::Rails.logger if defined?(::Rails)
         # Number of tokens to return in each page.
         set :tokens_per_page, 100
         set :public, ::File.dirname(__FILE__) + "/../admin"

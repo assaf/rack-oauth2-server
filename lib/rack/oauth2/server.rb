@@ -221,7 +221,7 @@ module Rack
           else
             response = @app.call(env)
             if response[1] && response[1].delete("oauth.no_access")
-              logger.debug "RO2S: Unauthorized request"
+              logger.debug "RO2S: Unauthorized request" if logger
               # OAuth access required.
               return unauthorized(request)
             elsif response[1] && response[1]["oauth.authorization"]

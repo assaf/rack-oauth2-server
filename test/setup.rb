@@ -6,6 +6,7 @@ require "shoulda"
 require "timecop"
 require "ap"
 require "json"
+require "logger"
 $: << File.dirname(__FILE__) + "/../lib"
 $: << File.expand_path(File.dirname(__FILE__) + "/..")
 require "rack/oauth2/server"
@@ -15,6 +16,17 @@ require "rack/oauth2/server/admin"
 ENV["RACK_ENV"] = "test"
 DATABASE = Mongo::Connection.new["test"]
 FRAMEWORK = ENV["FRAMEWORK"] || "sinatra"
+
+
+$logger = Logger.new("test.log")
+$logger.level = Logger::DEBUG
+Rack::OAuth2::Server::Admin.configure do |config|
+  config.set :logger, $logger
+  config.set :logging, true
+  config.set :raise_errors, true
+  config.set :dump_errors, true
+  config.oauth.logger = $logger
+end
 
 
 case FRAMEWORK
