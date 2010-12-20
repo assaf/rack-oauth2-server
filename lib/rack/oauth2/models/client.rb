@@ -10,6 +10,7 @@ module Rack
           def find(client_id)
             id = BSON::ObjectId(client_id.to_s)
             Server.new_instance self, collection.find_one(id)
+          rescue BSON::InvalidObjectId
           end
 
           # Create a new client. Client provides the following properties:

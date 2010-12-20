@@ -11,6 +11,7 @@ module Rack
           def find(request_id)
             id = BSON::ObjectId(request_id.to_s)
             Server.new_instance self, collection.find_one(id)
+          rescue BSON::InvalidObjectId
           end
 
           # Create a new authorization request. This holds state, so in addition
