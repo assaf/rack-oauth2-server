@@ -1,3 +1,11 @@
+2010-12-22 version 2.1.0
+
+Added support for two-legged OAuth flow (Brian Ploetz)
+
+Fixed query parameter authorization and allowed access_token to be defined
+(Ari)
+
+
 2010-11-30 version 2.0.1
 
 Change: username/password authentication with no scope results in access token
