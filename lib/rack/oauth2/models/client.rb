@@ -30,7 +30,7 @@ module Rack
             scope = Server::Utils.normalize_scope(args[:scope])
             fields =  { :display_name=>args[:display_name], :link=>args[:link],
                         :image_url=>args[:image_url], :redirect_uri=>redirect_uri,
-                        :nodes=>args[:notes].to_s, :scope=>scope,
+                        :notes=>args[:notes].to_s, :scope=>scope,
                         :created_at=>Time.now.to_i, :revoked=>nil }
             if args[:id] && args[:secret]
               fields[:_id], fields[:secret] = BSON::ObjectId(args[:id].to_s), args[:secret]
