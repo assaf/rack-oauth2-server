@@ -44,7 +44,7 @@ module Rack
         # existing client registration.
         # @option args [String] :display_name Name to show when authorizing
         # access (e.g.  "My Awesome Application")
-        # @option args [String] link Link to client application's Web site 
+        # @option args [String] link Link to client application's Web site
         # @option args [String] image_url URL of image to show alongside display
         # name.
         # @option args [String] redirect_uri Redirect URL: authorization
@@ -157,7 +157,7 @@ module Rack
         @options.access_token_path ||= "/oauth/access_token"
         @options.authorize_path ||= "/oauth/authorize"
         @options.authorization_types ||=  %w{code token}
-        @options.param_authentication = false
+        @options.param_authentication ||= false
       end
 
       # @see Options
@@ -186,7 +186,8 @@ module Rack
           elsif options.param_authentication && !request.GET["oauth_verifier"] # Ignore OAuth 1.0 callbacks
             # 5.1.2.  URI Query Parameter
             # 5.1.3.  Form-Encoded Body Parameter
-            token = request.GET["oauth_token"] || request.POST["oauth_token"]
+            token   = request.GET["oauth_token"] || request.POST["oauth_token"]
+            token ||= request.GET['access_token'] || request.POST['access_token']
           end
 
           if token
@@ -195,6 +196,7 @@ module Rack
               raise InvalidTokenError if access_token.nil? || access_token.revoked
               raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.to_i
               request.env["oauth.access_token"] = token
+
               request.env["oauth.identity"] = access_token.identity
               access_token.access!
               logger.info "RO2S: Authorized #{access_token.identity}" if logger
