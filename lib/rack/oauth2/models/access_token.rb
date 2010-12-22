@@ -9,6 +9,16 @@ module Rack
       class AccessToken
         class << self
 
+          # Creates a new AccessToken for the given client and scope.
+          def create_token_for(client, scope)
+            scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
+            token = { :_id=>Server.secure_random, :scope=>scope, :client_id=>client.id,
+                      :created_at=>Time.now.to_i, :expires_at=>nil, :revoked=>nil }
+            collection.insert token
+            Client.collection.update({ :_id=>client.id }, { :$inc=>{ :tokens_granted=>1 } })
+            Server.new_instance self, token
+          end
+
           # Find AccessToken from token. Does not return revoked tokens.
           def from_token(token)
             Server.new_instance self, collection.find_one({ :_id=>token, :revoked=>nil })

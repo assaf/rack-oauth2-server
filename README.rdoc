@@ -328,6 +328,15 @@ updates its other properties.
 I'll let you figure that one for yourself.
 
 
+== Two-legged OAuth flow
+
+Rack::OAuth2::Server also supports the so-called "two-legged" OAuth flow, which does
+not require the end user authorization process. This is typically used in server to server
+scenarios where no user is involved. To utilize the two-legged flow, send the grant_type of
+"none" along with the client_id and client_secret to the access token path, and a new access
+token will be generated (assuming the client_id and client_secret check out).
+
+
 == OAuth Web Admin
 
 We haz it, and it's pretty rad:
