@@ -82,16 +82,6 @@ class AuthorizationTest < Test::Unit::TestCase
     should_redirect_with_error :invalid_client
   end
 
-  context "no client secret" do
-    setup { request_authorization :client_secret=>nil }
-    should_redirect_with_error :invalid_client
-  end
-
-  context "wrong client secret" do
-    setup { request_authorization :client_secret=>"plain wrong" }
-    should_redirect_with_error :invalid_client
-  end
-
   context "mismatched redirect URI" do
     setup { request_authorization :redirect_uri=>"http://uberclient.dot/oz" }
     should_redirect_with_error :redirect_uri_mismatch
