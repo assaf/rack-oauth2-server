@@ -83,7 +83,7 @@ The configuration options are:
   logger.  Will use +Rack::Logger+ if available.
 
 If you only intend to use the UI authorization flow, you don't need to worry
-about the authenticator. If you want to allow clients applications to create
+about the authenticator. If you want to allow client applications to create
 access tokens by passing the end-user's username/password, then you need an
 authenticator. This feature is necessary for some client applications, and
 quite handy during development/testing.
@@ -191,7 +191,7 @@ It can also support the +oauth_token+ query parameter or form field, if you set
 +param_authentication+ to true. This option is off by default to prevent
 conflict with OAuth 1.0 callback.
 
-If Rack::OAuth2::Server finder a valid access token in the request, it sets the
+If Rack::OAuth2::Server finds a valid access token in the request, it sets the
 request header +oauth.identity+ to the value you supplied during authorization
 (step 3). You can use +oauth.identity+ to resolve the access token back to
 user, account or whatever you put there.
@@ -288,7 +288,7 @@ shown to the end-user to let them know which client application they're
 granting access to.
 
 Clients can also register a redirect URL. This is optional but highly
-recommended for better security, preventing other applications from hijackin
+recommended for better security, preventing other applications from hijacking
 the client's ID/secret.
 
 You can register clients using the command line tool +oauth2-server+:
