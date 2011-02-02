@@ -102,7 +102,7 @@ nil or false. For example:
 === Step 3: Let Users Authorize
 
 Authorization requests go to +/oauth/authorize+. Rack::OAuth2::Server
-intercepts these requests and validates the client ID, secret, redirect URI,
+intercepts these requests and validates the client ID, redirect URI,
 authorization type and scope. If the request fails validation, the user is
 redirected back to the client application with a suitable error code.
 
