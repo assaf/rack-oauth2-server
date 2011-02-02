@@ -391,7 +391,7 @@ module Rack
         # 2.1  Client Password Credentials
         if request.basic?
           client_id, client_secret = request.credentials
-        elsif request.form_data?
+        elsif request.post?
           client_id, client_secret = request.POST.values_at("client_id", "client_secret")
         else
           client_id, client_secret = request.GET.values_at("client_id", "client_secret")
