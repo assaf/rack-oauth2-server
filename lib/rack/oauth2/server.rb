@@ -276,7 +276,7 @@ module Rack
 
             # 3. Obtaining End-User Authorization
             response_type = request.GET["response_type"].to_s # Need this first, for error handling
-            client = get_client(request)
+            client = get_client(request, :dont_authenticate => true)
             raise RedirectUriMismatchError unless client.redirect_uri.nil? || client.redirect_uri == redirect_uri.to_s
             raise UnsupportedResponseTypeError unless options.authorization_types.include?(response_type)
             requested_scope = Utils.normalize_scope(request.GET["scope"])
@@ -387,7 +387,7 @@ module Rack
 
       # Returns client from request based on credentials. Raises
       # InvalidClientError if client doesn't exist or secret doesn't match.
-      def get_client(request)
+      def get_client(request, options={})
         # 2.1  Client Password Credentials
         if request.basic?
           client_id, client_secret = request.credentials
@@ -397,7 +397,10 @@ module Rack
           client_id, client_secret = request.GET.values_at("client_id", "client_secret")
         end
         client = self.class.get_client(client_id)
-        raise InvalidClientError unless client && client.secret == client_secret
+        raise InvalidClientError if !client
+        unless options[:dont_authenticate]
+          raise InvalidClientError unless client.secret == client_secret
+        end
         raise InvalidClientError if client.revoked
         return client
       rescue BSON::InvalidObjectId
