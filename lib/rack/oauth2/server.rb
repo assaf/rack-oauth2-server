@@ -353,7 +353,9 @@ module Rack
             # 4.1.1.  Authorization Code
             grant = AccessGrant.from_code(request.POST["code"])
             raise InvalidGrantError, "Wrong client" unless grant && client.id == grant.client_id
-            raise InvalidGrantError, "Wrong redirect URI" unless grant.redirect_uri.nil? || grant.redirect_uri == Utils.parse_redirect_uri(request.POST["redirect_uri"]).to_s
+            unless client.redirect_uri.nil? || client.redirect_uri.to_s.empty?
+              raise InvalidGrantError, "Wrong redirect URI" unless grant.redirect_uri == Utils.parse_redirect_uri(request.POST["redirect_uri"]).to_s
+            end
             raise InvalidGrantError, "This access grant expired" if grant.expires_at && grant.expires_at <= Time.now.to_i
             access_token = grant.authorize!
           when "password"
