@@ -79,7 +79,7 @@ class AdminApiTest < Test::Unit::TestCase
         assert_equal 200, last_response.status
       end
       should "return JSON document" do
-        assert_equal "application/json;charset=utf-8", last_response.content_type
+        assert_equal "application/json", last_response.content_type.split(";").first
       end
       should "return list of clients" do
         assert Array === json["list"]
@@ -193,7 +193,7 @@ class AdminApiTest < Test::Unit::TestCase
         assert_equal 200, last_response.status
       end
       should "return JSON document" do
-        assert_equal "application/json;charset=utf-8", last_response.content_type
+        assert_equal "application/json", last_response.content_type.split(";").first
       end
       should "provide client identifier" do
         assert_equal client.id.to_s, json["id"]
