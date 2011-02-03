@@ -1,3 +1,12 @@
+2011-02-02 version 2.2.0
+
+Don't require client_secret when requesting authorization (George Ogata).
+
+Don't check the redirect_uri if the client does not have one set (George Ogata).
+
+Look for post params if request is a POST (George Ogata).
+
+
 2010-12-22 version 2.1.0
 
 Added support for two-legged OAuth flow (Brian Ploetz)
