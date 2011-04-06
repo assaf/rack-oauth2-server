@@ -287,7 +287,7 @@ module Rack
             auth_request = AuthRequest.create(client, requested_scope, redirect_uri.to_s, response_type, state)
             uri = URI.parse(request.url)
             uri.query = "authorization=#{auth_request.id.to_s}"
-            return [303, { "Content-Type"=>"text/plain", "Location"=>uri.to_s }, ["You are being redirected"]]
+            return redirect_to(uri, 303)
           end
         rescue OAuthError=>error
           logger.error "RO2S: Authorization request error #{error.code}: #{error.message}" if logger
@@ -409,9 +409,10 @@ module Rack
         raise InvalidClientError
       end
 
-      # Rack redirect response. The argument is typically a URI object.
-      def redirect_to(uri)
-        return [302, { "Content-Type"=>"text/plain", "Location"=>uri.to_s }, ["You are being redirected"]]
+      # Rack redirect response.
+      # The argument is typically a URI object, and the status should be a 302 or 303.
+      def redirect_to(uri, status = 302)
+        return [status, { "Content-Type"=>"text/plain", "Location"=>uri.to_s }, ["You are being redirected"]]
       end
 
       def bad_request(message)
