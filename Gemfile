@@ -2,6 +2,7 @@ source :rubygems
 gemspec
 
 group :development do
+  gem "rake"
   gem "thin"
   gem "yard"
 end

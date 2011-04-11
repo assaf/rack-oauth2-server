@@ -2,6 +2,16 @@ require "rake/testtask"
 
 spec = Gem::Specification.load(Dir["*.gemspec"].first)
 
+desc "Install dependencies"
+task :setup do
+  puts "Installing gems for testing with Sinatra ..."
+  sh "bundle install"
+  puts "Installing gems for testing with Rails 2.3 ..."
+  sh "env BUNDLE_GEMFILE=Rails2 bundle install"
+  puts "Installing gems for testing with Rails 3.x ..."
+  sh "env BUNDLE_GEMFILE=Rails3 bundle install"
+end
+
 desc "Run this in development mode when updating the CoffeeScript file"
 task :coffee do
   sh "coffee -w -o lib/rack/oauth2/admin/js/ lib/rack/oauth2/admin/js/application.coffee"
@@ -46,7 +56,6 @@ Rake::TestTask.new do |task|
     task.ruby_opts << "-I."
 end
 
-RUBIES = %w{1.8.7 1.9.2}
 namespace :test do
   task :all=>["test:sinatra", "test:rails2", "test:rails3"]
   desc "Run all tests against Sinatra"
@@ -64,15 +73,6 @@ namespace :test do
   desc "Run all tests against Rails 3.x"
   task :rails3 do
     sh "env BUNDLE_GEMFILE=Rails3 bundle exec rake test FRAMEWORK=rails"
-  end
-
-  desc "Test in all supported RVMs"
-  task :rubies do
-    RUBIES.each do |ruby|
-      puts "*** #{ruby} ***"
-      sh "rvm #{ruby}@rack-oauth2-server rake test:all"
-      puts
-    end
   end
 end
 task :default=>"test:all"
