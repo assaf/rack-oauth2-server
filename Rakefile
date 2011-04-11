@@ -85,6 +85,6 @@ begin
 rescue LoadError
 end
 
-task :clobber do
+task :clean do
   rm_rf %w{doc .yardoc *.gem}
 end

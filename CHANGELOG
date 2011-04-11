@@ -1,3 +1,8 @@
+2011-04-11 version 2.2.1
+
+Content type header on redirects (Marc Schwieterman)
+
+
 2011-02-02 version 2.2.0
 
 Don't require client_secret when requesting authorization (George Ogata).
