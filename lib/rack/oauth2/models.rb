@@ -38,8 +38,13 @@ module Rack
             @create_indexes = nil
           end
         end
+ 
+       	def database
+      		raise 'No database Configured. You must configure it using Server.database = MongoDB::Connection.new()[db_name] ' unless @database
+      		@database
+ 	 			end	
       end
-
+ 
     end
   end
 end
