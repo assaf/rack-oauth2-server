@@ -1,3 +1,8 @@
+Pending Version 2.2.2
+
+Fix for unknown [] for NilClass when database not setup (epinault-ttc)
+
+
 2011-04-11 version 2.2.1
 
 Content type header on redirects (Marc Schwieterman)
