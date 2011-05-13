@@ -164,20 +164,32 @@ module Rack
       attr_reader :options
 
       def call(env)
+        puts "############ CALL #{options}"
+        
         request = OAuthRequest.new(env)
+        puts "############ CALL 1 Options Host: #{options.host} Request Host #{request.host}"
+
         return @app.call(env) if options.host && options.host != request.host
+        puts "############ CALL 2"
+
         return @app.call(env) if options.path && request.path.index(options.path) != 0
+
+        puts "############ CALL 3"
 
         begin
           # Use options.database if specified.
           org_database, Server.database = Server.database, options.database || Server.database
           logger = options.logger || env["rack.logger"]
+          puts "############ CALL 4 "
 
           # 3.  Obtaining End-User Authorization
           # Flow starts here.
           return request_authorization(request, logger) if request.path == options.authorize_path
+          puts "############ CALL 5"
+
           # 4.  Obtaining an Access Token
           return respond_with_access_token(request, logger) if request.path == options.access_token_path
+          puts "############ CALL 6"
 
           # 5.  Accessing a Protected Resource
           if request.authorization
