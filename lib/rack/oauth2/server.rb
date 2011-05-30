@@ -164,13 +164,9 @@ module Rack
       attr_reader :options
 
       def call(env)
-        
         request = OAuthRequest.new(env)
-
         return @app.call(env) if options.host && options.host != request.host
-
         return @app.call(env) if options.path && request.path.index(options.path) != 0
-
 
         begin
           # Use options.database if specified.
@@ -180,7 +176,6 @@ module Rack
           # 3.  Obtaining End-User Authorization
           # Flow starts here.
           return request_authorization(request, logger) if request.path == options.authorize_path
-
           # 4.  Obtaining an Access Token
           return respond_with_access_token(request, logger) if request.path == options.access_token_path
 
