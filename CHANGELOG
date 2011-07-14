@@ -1,6 +1,11 @@
-Pending Version 2.2.2
+2011-07-13 Version 2.2.2
 
 Fix for unknown [] for NilClass when database not setup (epinault-ttc)
+
+Warn people when they forgot to set Server.database or set it to
+Mongo::Connection instead of Mongo::DB.
+
+Fixes the strict url scheme issue (Martin Wawrusch).
 
 
 2011-04-11 version 2.2.1
