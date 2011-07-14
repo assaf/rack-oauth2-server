@@ -13,7 +13,6 @@ module Rack
           uri = URI.parse(redirect_uri).normalize rescue nil
           raise InvalidRequestError, "Redirect URL looks fishy to me" unless uri
           raise InvalidRequestError, "Redirect URL must be absolute URL" unless uri.absolute? && uri.host
-          raise InvalidRequestError, "Redirect URL must point to HTTP/S location" unless uri.scheme == "http" || uri.scheme == "https"
           uri
         end
 
