@@ -164,6 +164,8 @@ module Rack
       attr_reader :options
 
       def call(env)
+        fail "You set Server.database to #{Server.database.class}, should be a Mongo::DB object" unless Mongo::DB === Server.database
+
         request = OAuthRequest.new(env)
         return @app.call(env) if options.host && options.host != request.host
         return @app.call(env) if options.path && request.path.index(options.path) != 0
