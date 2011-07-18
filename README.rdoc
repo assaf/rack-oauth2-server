@@ -72,7 +72,7 @@ The configuration options are:
   ["code", "token"], and you can change it to just one of these names.
 - +:authorize_path+ --  Path for requesting end-user authorization. By
   convention defaults to +/oauth/authorize+.
-- +:database+ -- +Mongo::DB+ instance.
+- +:database+ -- +Mongo::DB+ instance (this is a global setting).
 - +:host+ -- Only check requests sent to this host.
 - +:path+ -- Only check requests for resources under this path.
 - +:param_authentication+ -- If true, supports authentication using query/form
