@@ -95,7 +95,7 @@ module Rack
         #
         # @return [Hash] Settings
         def oauth
-          @oauth ||= Server::Options.new
+          @oauth ||= Server.options
         end
       end
 

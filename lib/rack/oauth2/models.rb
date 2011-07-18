@@ -8,9 +8,6 @@ module Rack
     class Server
 
       class << self
-        # A Mongo::DB object.
-        attr_accessor :database
-        
         # Create new instance of the klass and populate its attributes.
         def new_instance(klass, fields)
           return unless fields
@@ -39,10 +36,13 @@ module Rack
           end
         end
  
-       	def database
-      		raise 'No database Configured. You must configure it using Server.database = MongoDB::Connection.new()[db_name] ' unless @database
-      		@database
- 	 			end	
+        # A Mongo::DB object.
+        def database
+          @database ||= Server.options.database
+          raise "No database Configured. You must configure it using Server.options.database = Mongo::Connection.new()[db_name]" unless @database
+          raise "You set Server.database to #{Server.database.class}, should be a Mongo::DB object" unless Mongo::DB === @database
+          @database
+        end
       end
  
     end

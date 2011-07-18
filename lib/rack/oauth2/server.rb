@@ -129,7 +129,7 @@ module Rack
       #   these names.
       # - :authorize_path --  Path for requesting end-user authorization. By
       #   convention defaults to /oauth/authorize.
-      # - :database -- Mongo::DB instance.
+      # - :database -- Mongo::DB instance (this is a global option).
       # - :host -- Only check requests sent to this host.
       # - :path -- Only check requests for resources under this path.
       # - :param_authentication -- If true, supports authentication using
@@ -150,9 +150,17 @@ module Rack
       Options = Struct.new(:access_token_path, :authenticator, :authorization_types,
         :authorize_path, :database, :host, :param_authentication, :path, :realm, :logger)
 
-      def initialize(app, options = Options.new, &authenticator)
+      # Global options. This is what we set during configuration (e.g. Rails'
+      # config/application), and options all handlers inherit by default.
+      def self.options
+        @options
+      end
+
+      @options = Options.new
+
+      def initialize(app, options = nil, &authenticator)
         @app = app
-        @options = options
+        @options = options || Server.options
         @options.authenticator ||= authenticator
         @options.access_token_path ||= "/oauth/access_token"
         @options.authorize_path ||= "/oauth/authorize"
@@ -160,84 +168,76 @@ module Rack
         @options.param_authentication ||= false
       end
 
-      # @see Options
+      # Options specific for this handle. @see Options
       attr_reader :options
 
       def call(env)
-        fail "You set Server.database to #{Server.database.class}, should be a Mongo::DB object" unless Mongo::DB === Server.database
-
         request = OAuthRequest.new(env)
         return @app.call(env) if options.host && options.host != request.host
         return @app.call(env) if options.path && request.path.index(options.path) != 0
 
-        begin
-          # Use options.database if specified.
-          org_database, Server.database = Server.database, options.database || Server.database
-          logger = options.logger || env["rack.logger"]
+        logger = options.logger || env["rack.logger"]
 
-          # 3.  Obtaining End-User Authorization
-          # Flow starts here.
-          return request_authorization(request, logger) if request.path == options.authorize_path
-          # 4.  Obtaining an Access Token
-          return respond_with_access_token(request, logger) if request.path == options.access_token_path
+        # 3.  Obtaining End-User Authorization
+        # Flow starts here.
+        return request_authorization(request, logger) if request.path == options.authorize_path
+        # 4.  Obtaining an Access Token
+        return respond_with_access_token(request, logger) if request.path == options.access_token_path
 
-          # 5.  Accessing a Protected Resource
-          if request.authorization
-            # 5.1.1.  The Authorization Request Header Field
-            token = request.credentials if request.oauth?
-          elsif options.param_authentication && !request.GET["oauth_verifier"] # Ignore OAuth 1.0 callbacks
-            # 5.1.2.  URI Query Parameter
-            # 5.1.3.  Form-Encoded Body Parameter
-            token   = request.GET["oauth_token"] || request.POST["oauth_token"]
-            token ||= request.GET['access_token'] || request.POST['access_token']
+        # 5.  Accessing a Protected Resource
+        if request.authorization
+          # 5.1.1.  The Authorization Request Header Field
+          token = request.credentials if request.oauth?
+        elsif options.param_authentication && !request.GET["oauth_verifier"] # Ignore OAuth 1.0 callbacks
+          # 5.1.2.  URI Query Parameter
+          # 5.1.3.  Form-Encoded Body Parameter
+          token   = request.GET["oauth_token"] || request.POST["oauth_token"]
+          token ||= request.GET['access_token'] || request.POST['access_token']
+        end
+
+        if token
+          begin
+            access_token = AccessToken.from_token(token)
+            raise InvalidTokenError if access_token.nil? || access_token.revoked
+            raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.to_i
+            request.env["oauth.access_token"] = token
+
+            request.env["oauth.identity"] = access_token.identity
+            access_token.access!
+            logger.info "RO2S: Authorized #{access_token.identity}" if logger
+          rescue OAuthError=>error
+            # 5.2.  The WWW-Authenticate Response Header Field
+            logger.info "RO2S: HTTP authorization failed #{error.code}" if logger
+            return unauthorized(request, error)
+          rescue =>ex
+            logger.info "RO2S: HTTP authorization failed #{ex.message}" if logger
+            return unauthorized(request)
           end
 
-          if token
-            begin
-              access_token = AccessToken.from_token(token)
-              raise InvalidTokenError if access_token.nil? || access_token.revoked
-              raise ExpiredTokenError if access_token.expires_at && access_token.expires_at <= Time.now.to_i
-              request.env["oauth.access_token"] = token
-
-              request.env["oauth.identity"] = access_token.identity
-              access_token.access!
-              logger.info "RO2S: Authorized #{access_token.identity}" if logger
-            rescue OAuthError=>error
-              # 5.2.  The WWW-Authenticate Response Header Field
-              logger.info "RO2S: HTTP authorization failed #{error.code}" if logger
-              return unauthorized(request, error)
-            rescue =>ex
-              logger.info "RO2S: HTTP authorization failed #{ex.message}" if logger
-              return unauthorized(request)
-            end
-
-            # We expect application to use 403 if request has insufficient scope,
-            # and return appropriate WWW-Authenticate header.
-            response = @app.call(env)
-            if response[0] == 403
-              scope = Utils.normalize_scope(response[1]["oauth.no_scope"])
-              challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scope.join(" ")]
-              response[1]["WWW-Authenticate"] = challenge
-              return response
-            else
-              return response
-            end
+          # We expect application to use 403 if request has insufficient scope,
+          # and return appropriate WWW-Authenticate header.
+          response = @app.call(env)
+          if response[0] == 403
+            scope = Utils.normalize_scope(response[1]["oauth.no_scope"])
+            challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scope.join(" ")]
+            response[1]["WWW-Authenticate"] = challenge
+            return response
           else
-            response = @app.call(env)
-            if response[1] && response[1].delete("oauth.no_access")
-              logger.debug "RO2S: Unauthorized request" if logger
-              # OAuth access required.
-              return unauthorized(request)
-            elsif response[1] && response[1]["oauth.authorization"]
-              # 3.  Obtaining End-User Authorization
-              # Flow ends here.
-              return authorization_response(response, logger)
-            else
-              return response
-            end
+            return response
           end
-        ensure
-          Server.database = org_database
+        else
+          response = @app.call(env)
+          if response[1] && response[1].delete("oauth.no_access")
+            logger.debug "RO2S: Unauthorized request" if logger
+            # OAuth access required.
+            return unauthorized(request)
+          elsif response[1] && response[1]["oauth.authorization"]
+            # 3.  Obtaining End-User Authorization
+            # Flow ends here.
+            return authorization_response(response, logger)
+          else
+            return response
+          end
         end
       end
 

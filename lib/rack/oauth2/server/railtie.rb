@@ -7,7 +7,7 @@ module Rack
     class Server
       # Rails 3.x integration.
       class Railtie < ::Rails::Railtie # :nodoc:
-        config.oauth = Server::Options.new
+        config.oauth = Server.options
 
         initializer "rack-oauth2-server" do |app|
           app.middleware.use ::Rack::OAuth2::Server, app.config.oauth

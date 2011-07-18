@@ -7,6 +7,16 @@ class ServerTest < Test::Unit::TestCase
     super
   end
 
+  context "configuration" do
+    should "set oauth.database" do
+      assert_equal DATABASE, Server.database
+    end
+
+    should "set oauth.host" do
+      assert_equal "example.org", Server.options.host
+    end
+  end
+
   context "get_auth_request" do
     setup { @request = Server::AuthRequest.create(client, client.scope.join(" "), client.redirect_uri, "token", nil) }
     should "return authorization request" do
