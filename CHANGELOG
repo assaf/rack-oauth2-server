@@ -1,4 +1,4 @@
-Pending Version 2.3.0
+2011-07-18 Version 2.3.0
 
 Setting oauth.database = <db> in configuration block now works as you would
 expect it to.  As a side note, this is now a global setting (i.e. shared by all
