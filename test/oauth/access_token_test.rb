@@ -59,6 +59,15 @@ class AccessTokenTest < Test::Unit::TestCase
   def with_token(token = @token)
     header "Authorization", "OAuth #{token}"
   end
+  
+  def expire
+    Rack::OAuth2::Server::AccessToken.collection.update({ :_id => @token }, { :$set=> { :expires_at => (Time.now - 1).to_i } })
+  end
+  
+  def with_expired_token
+    expire
+    header "Authorization", "OAuth #{@token}"
+  end
 
 
   # 5.  Accessing a Protected Resource
@@ -82,6 +91,14 @@ class AccessTokenTest < Test::Unit::TestCase
     context "no authorization" do
       setup { get "/private" }
       should_fail_authentication
+    end
+    
+    context "expired authorization" do
+      setup do
+        with_expired_token
+        get "/private"
+      end
+      should_fail_authentication :expired_token
     end
 
     context "HTTP authentication" do
@@ -268,6 +285,18 @@ class AccessTokenTest < Test::Unit::TestCase
     should "not return other resource's token" do
       assert !last_response.body.split.include?(@other)
     end
+  end
+  
+  context "tokens have an expire date" do
+    setup do
+      @other_token = Rack::OAuth2::Server::AccessToken.from_token(@token)
+    end
+    
+    should "expire in a day" do
+      a_day_later = (Time.now + (60 * 60 * 24) + 1).to_i
+      assert @other_token.expires_at < a_day_later
+    end
+      
   end
 
 
