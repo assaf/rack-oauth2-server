@@ -89,7 +89,7 @@ module Rack
           end
           
           def set_token_expiry token
-            token[:expires_at] = (Time.now + (Server.options.expire_days * 24 * 60 * 60)).to_i if Server.options.tokens_expire
+            token[:expires_at] = (Time.now + (Server.options.expire_days * 24 * 60 * 60)).to_i if Server.options.expire_days > 0
           end
         end
 

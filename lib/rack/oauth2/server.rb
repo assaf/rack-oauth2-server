@@ -136,6 +136,7 @@ module Rack
       #   query/form parameters.
       # - :realm -- Authorization realm that will show up in 401 responses.
       #   Defaults to use the request host name.
+      # - :expire_days -- Number of days an auth token will live. Defaults to no expiry.
       # - :logger -- The logger to use. Under Rails, defaults to use the Rails
       #   logger.  Will use Rack::Logger if available.
       #
@@ -148,7 +149,7 @@ module Rack
       #     user if user && user.authenticated?(password)
       #   end
       Options = Struct.new(:access_token_path, :authenticator, :authorization_types,
-        :authorize_path, :database, :host, :param_authentication, :path, :realm, :tokens_expire, 
+        :authorize_path, :database, :host, :param_authentication, :path, :realm, 
         :expire_days,:logger)
 
       # Global options. This is what we set during configuration (e.g. Rails'
@@ -167,8 +168,7 @@ module Rack
         @options.authorize_path ||= "/oauth/authorize"
         @options.authorization_types ||=  %w{code token}
         @options.param_authentication ||= false
-        @options.tokens_expire ||= false
-        @options.expire_days ||= 365
+        @options.expire_days ||= 0
       end
 
       # Options specific for this handle. @see Options
