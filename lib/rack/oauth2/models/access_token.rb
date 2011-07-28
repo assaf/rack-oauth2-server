@@ -14,6 +14,7 @@ module Rack
             scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
             token = { :_id=>Server.secure_random, :scope=>scope, :client_id=>client.id,
                       :created_at=>Time.now.to_i, :expires_at=>nil, :revoked=>nil }
+            set_token_expiry token
             collection.insert token
             Client.collection.update({ :_id=>client.id }, { :$inc=>{ :tokens_granted=>1 } })
             Server.new_instance self, token
@@ -32,6 +33,7 @@ module Rack
               token = { :_id=>Server.secure_random, :identity=>identity, :scope=>scope,
                         :client_id=>client.id, :created_at=>Time.now.to_i,
                         :expires_at=>nil, :revoked=>nil }
+              set_token_expiry token
               collection.insert token
               Client.collection.update({ :_id=>client.id }, { :$inc=>{ :tokens_granted=>1 } })
             end
@@ -84,6 +86,10 @@ module Rack
 
           def collection
             Server.database["oauth2.access_tokens"]
+          end
+          
+          def set_token_expiry token
+            token[:expires_at] = (Time.now + (Server.options.expire_days * 24 * 60 * 60)).to_i if Server.options.expire_days > 0
           end
         end
 

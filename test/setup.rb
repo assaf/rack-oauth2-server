@@ -25,6 +25,7 @@ Rack::OAuth2::Server::Admin.configure do |config|
   config.set :logging, true
   config.set :raise_errors, true
   config.set :dump_errors, true
+  config.oauth.expire_days = 1
   config.oauth.logger = $logger
 end
 
