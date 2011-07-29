@@ -4,6 +4,9 @@ class << Rails
   end
 end
 
+require "yaml"
+YAML::ENGINE.yamler= "syck" # see http://stackoverflow.com/questions/4980877/rails-error-couldnt-parse-yaml
+
 Rails::Initializer.run do |config|
   config.frameworks = [ :action_controller ]
   config.action_controller.session = { :key=>"_myapp_session", :secret=>"Stay hungry. Stay foolish. -- Steve Jobs" }
