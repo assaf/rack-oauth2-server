@@ -1,3 +1,14 @@
+2011-07-19 Version 2.4.0
+
+Added fourth argument to Server.token_for that allows setting token expiration,
+and Server option expires_in that does that same thing for all tokens.
+
+Set to number of seconds token should be accepted. If nil or zero, access token
+never expires. For example:
+
+  config.oauth.expires_in = 1.day
+
+
 2011-07-18 Version 2.3.0
 
 Setting oauth.database = <db> in configuration block now works as you would

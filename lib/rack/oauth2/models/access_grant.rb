@@ -57,10 +57,10 @@ module Rack
         # requests to obtain it, so we need to make sure only first request is
         # successful in returning access token, futher requests raise
         # InvalidGrantError.
-        def authorize!
+        def authorize!(expires_in = nil)
           raise InvalidGrantError, "You can't use the same access grant twice" if self.access_token || self.revoked
           client = Client.find(client_id) or raise InvalidGrantError
-          access_token = AccessToken.get_token_for(identity, client, scope)
+          access_token = AccessToken.get_token_for(identity, client, scope, expires_in)
           self.access_token = access_token.token
           self.granted_at = Time.now.to_i
           self.class.collection.update({ :_id=>code, :access_token=>nil, :revoked=>nil }, { :$set=>{ :granted_at=>granted_at, :access_token=>access_token.token } }, :safe=>true)

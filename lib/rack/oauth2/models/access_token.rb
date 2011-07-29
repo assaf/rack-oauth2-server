@@ -9,31 +9,23 @@ module Rack
       class AccessToken
         class << self
 
-          # Creates a new AccessToken for the given client and scope.
-          def create_token_for(client, scope)
-            scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
-            token = { :_id=>Server.secure_random, :scope=>scope, :client_id=>client.id,
-                      :created_at=>Time.now.to_i, :expires_at=>nil, :revoked=>nil }
-            set_token_expiry token
-            collection.insert token
-            Client.collection.update({ :_id=>client.id }, { :$inc=>{ :tokens_granted=>1 } })
-            Server.new_instance self, token
-          end
-
           # Find AccessToken from token. Does not return revoked tokens.
           def from_token(token)
             Server.new_instance self, collection.find_one({ :_id=>token, :revoked=>nil })
           end
 
           # Get an access token (create new one if necessary).
-          def get_token_for(identity, client, scope)
+          #
+          # You can set optional expiration in seconds. If zero or nil, token
+          # never expires.
+          def get_token_for(identity, client, scope, expires = nil)
             raise ArgumentError, "Identity must be String or Integer" unless String === identity || Integer === identity
             scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
             unless token = collection.find_one({ :identity=>identity, :scope=>scope, :client_id=>client.id, :revoked=>nil })
+              expires_at = Time.now.to_i + expires if expires && expires != 0
               token = { :_id=>Server.secure_random, :identity=>identity, :scope=>scope,
                         :client_id=>client.id, :created_at=>Time.now.to_i,
-                        :expires_at=>nil, :revoked=>nil }
-              set_token_expiry token
+                        :expires_at=>expires_at, :revoked=>nil }
               collection.insert token
               Client.collection.update({ :_id=>client.id }, { :$inc=>{ :tokens_granted=>1 } })
             end
@@ -86,10 +78,6 @@ module Rack
 
           def collection
             Server.database["oauth2.access_tokens"]
-          end
-          
-          def set_token_expiry token
-            token[:expires_at] = (Time.now + (Server.options.expire_days * 24 * 60 * 60)).to_i if Server.options.expire_days > 0
           end
         end
 

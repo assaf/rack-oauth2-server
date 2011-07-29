@@ -57,7 +57,7 @@ module Rack
         attr_accessor :revoked
 
         # Grant access to the specified identity.
-        def grant!(identity)
+        def grant!(identity, expires_in = nil)
           raise ArgumentError, "Must supply a identity" unless identity
           return if revoked
           client = Client.find(client_id) or return
@@ -67,7 +67,7 @@ module Rack
             self.grant_code = access_grant.code
             self.class.collection.update({ :_id=>id, :revoked=>nil }, { :$set=>{ :grant_code=>access_grant.code, :authorized_at=>authorized_at } })
           else # Requested access token
-            access_token = AccessToken.get_token_for(identity, client, scope)
+            access_token = AccessToken.get_token_for(identity, client, scope, expires_in)
             self.access_token = access_token.token
             self.class.collection.update({ :_id=>id, :revoked=>nil, :access_token=>nil }, { :$set=>{ :access_token=>access_token.token, :authorized_at=>authorized_at } })
           end

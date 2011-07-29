@@ -73,6 +73,8 @@ The configuration options are:
 - +:authorize_path+ --  Path for requesting end-user authorization. By
   convention defaults to +/oauth/authorize+.
 - +:database+ -- +Mongo::DB+ instance (this is a global setting).
+- +:expires_in+ -- Number of seconds an auth token will live. If nil or zero,
+  access token never expires.
 - +:host+ -- Only check requests sent to this host.
 - +:path+ -- Only check requests for resources under this path.
 - +:param_authentication+ -- If true, supports authentication using query/form

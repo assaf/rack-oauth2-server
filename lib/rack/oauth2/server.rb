@@ -79,12 +79,12 @@ module Rack
         # @param [String,Integer] identity User ID, account ID, etc
         # @param [String] client_id Client identifier
         # @param [Array, nil] scope Array of string, nil if you want 'em all
-        # @param [Integer, nil] expires How many seconds before access grant
+        # @param [Integer, nil] expires_in How many seconds before access grant
         # expires (default to 5 minutes)
         # @return [String] Access grant authorization code
-        def access_grant(identity, client_id, scope = nil, expires = nil)
+        def access_grant(identity, client_id, scope = nil, expires_in = nil)
           client = get_client(client_id) or fail "No such client"
-          AccessGrant.create(identity, client, scope || client.scope, nil, expires).code
+          AccessGrant.create(identity, client, scope || client.scope, nil, expires_in).code
         end
 
         # Returns AccessToken from token.
@@ -102,10 +102,12 @@ module Rack
         # @param [String,Integer] identity Identity, e.g. user ID, account ID
         # @param [String] client_id Client application identifier
         # @param [Array, nil] scope Array of names, nil if you want 'em all
+        # @param [Integer, nil] expires How many seconds before access token
+        # expires, defaults to never. If zero or nil, token never expires.
         # @return [String] Access token
-        def token_for(identity, client_id, scope = nil)
+        def token_for(identity, client_id, scope = nil, expires_in = nil)
           client = get_client(client_id) or fail "No such client"
-          AccessToken.get_token_for(identity, client, scope || client.scope).token
+          AccessToken.get_token_for(identity, client, scope || client.scope, expires_in).token
         end
 
         # Returns all AccessTokens for an identity.
@@ -130,13 +132,14 @@ module Rack
       # - :authorize_path --  Path for requesting end-user authorization. By
       #   convention defaults to /oauth/authorize.
       # - :database -- Mongo::DB instance (this is a global option).
+      # - :expires_in -- Number of seconds an auth token will live. If nil or
+      #   zero, access token never expires.
       # - :host -- Only check requests sent to this host.
       # - :path -- Only check requests for resources under this path.
       # - :param_authentication -- If true, supports authentication using
       #   query/form parameters.
       # - :realm -- Authorization realm that will show up in 401 responses.
       #   Defaults to use the request host name.
-      # - :expire_days -- Number of days an auth token will live. Defaults to no expiry.
       # - :logger -- The logger to use. Under Rails, defaults to use the Rails
       #   logger.  Will use Rack::Logger if available.
       #
@@ -150,7 +153,7 @@ module Rack
       #   end
       Options = Struct.new(:access_token_path, :authenticator, :authorization_types,
         :authorize_path, :database, :host, :param_authentication, :path, :realm, 
-        :expire_days,:logger)
+        :expires_in,:logger)
 
       # Global options. This is what we set during configuration (e.g. Rails'
       # config/application), and options all handlers inherit by default.
@@ -168,7 +171,6 @@ module Rack
         @options.authorize_path ||= "/oauth/authorize"
         @options.authorization_types ||=  %w{code token}
         @options.param_authentication ||= false
-        @options.expire_days ||= 0
       end
 
       # Options specific for this handle. @see Options
@@ -317,7 +319,7 @@ module Rack
         if status == 403
           auth_request.deny!
         else
-          auth_request.grant! headers["oauth.identity"]
+          auth_request.grant! headers["oauth.identity"], options.expires_in
         end
         # 3.1.  Authorization Response
         if auth_request.response_type == "code"
@@ -353,7 +355,7 @@ module Rack
           when "none"
             # 4.1 "none" access grant type (i.e. two-legged OAuth flow)
             requested_scope = request.POST["scope"] ? Utils.normalize_scope(request.POST["scope"]) : client.scope
-            access_token = AccessToken.create_token_for(client, requested_scope)
+            access_token = AccessToken.get_token_for(client.id.to_s, client, requested_scope, options.expires_in)
           when "authorization_code"
             # 4.1.1.  Authorization Code
             grant = AccessGrant.from_code(request.POST["code"])
@@ -362,7 +364,7 @@ module Rack
               raise InvalidGrantError, "Wrong redirect URI" unless grant.redirect_uri == Utils.parse_redirect_uri(request.POST["redirect_uri"]).to_s
             end
             raise InvalidGrantError, "This access grant expired" if grant.expires_at && grant.expires_at <= Time.now.to_i
-            access_token = grant.authorize!
+            access_token = grant.authorize!(options.expires_in)
           when "password"
             raise UnsupportedGrantType unless options.authenticator
             # 4.1.2.  Resource Owner Password Credentials
@@ -375,7 +377,7 @@ module Rack
             args << client.id << requested_scope unless options.authenticator.arity == 2
             identity = options.authenticator.call(*args)
             raise InvalidGrantError, "Username/password do not match" unless identity
-            access_token = AccessToken.get_token_for(identity, client, requested_scope)
+            access_token = AccessToken.get_token_for(identity, client, requested_scope, options.expires_in)
           else
             raise UnsupportedGrantType
           end

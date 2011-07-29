@@ -3,6 +3,7 @@ require "rack/oauth2/sinatra"
 class MyApp < Sinatra::Base
   use Rack::Logger
   set :sessions, true
+  set :show_exceptions, false
 
   register Rack::OAuth2::Sinatra
   oauth.authenticator = lambda do |username, password|
@@ -10,6 +11,7 @@ class MyApp < Sinatra::Base
   end
   oauth.host = "example.org"
   oauth.database = DATABASE
+
 
 
   # 3.  Obtaining End-User Authorization
