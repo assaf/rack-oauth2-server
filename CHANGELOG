@@ -1,4 +1,4 @@
-2011-07-19 Version 2.4.0
+2011-07-28 Version 2.4.0
 
 Added fourth argument to Server.token_for that allows setting token expiration,
 and Server option expires_in that does that same thing for all tokens.
