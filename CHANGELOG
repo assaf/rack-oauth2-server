@@ -1,3 +1,8 @@
+2011-08-01 Version 2.4.1
+
+Fixes error in oauth2-server command line (Michael Saffitz)
+
+
 2011-07-28 Version 2.4.0
 
 Added fourth argument to Server.token_for that allows setting token expiration,
