@@ -70,7 +70,7 @@ module Rack
         set :template_url, nil
         # Forces all requests to use HTTPS (true by default except in
         # development mode).
-        set :force_ssl, !development?
+        set :force_ssl, !development? && !test?
         # Common scope shown and added by default to new clients.
         set :scope, []
 
