@@ -5,7 +5,7 @@ class << Rails
 end
 
 require "yaml"
-YAML::ENGINE.yamler= "syck" # see http://stackoverflow.com/questions/4980877/rails-error-couldnt-parse-yaml
+YAML::ENGINE.yamler= "syck" if defined?(YAML::ENGINE) # see http://stackoverflow.com/questions/4980877/rails-error-couldnt-parse-yaml
 
 Rails::Initializer.run do |config|
   config.frameworks = [ :action_controller ]
