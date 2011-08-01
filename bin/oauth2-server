@@ -11,7 +11,7 @@ if (i = ARGV.index("--db")) && ARGV[i+1]
   uri = URI.parse("mongo://#{url}") if uri.opaque
   db = Mongo::Connection.new(uri.host, uri.port)[uri.path.sub(/^\//, "")]
   db.authenticate uri.user, uri.password if uri.user
-  Server.database = db
+  Server.options.database = db
   ARGV[i,2] = []
 end
 if (i = ARGV.index("--port") || ARGV.index("-p")) && ARGV[i+1]
@@ -23,7 +23,7 @@ end
 case ARGV[0]
 when "list"
 
-  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  fail "No database. Use the --db option to tell us which database to use" unless Server.options.database
   Server::Client.all.each do |client|
     next if client.revoked
     print "%-30s\t%s\n" % [client.display_name, client.link]
@@ -33,7 +33,7 @@ when "list"
 
 when "register"
 
-  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  fail "No database. Use the --db option to tell us which database to use" unless Server.options.database
   begin
     print "Application name:\t"
     display_name = $stdin.gets
@@ -54,7 +54,7 @@ when "register"
 
 when "setup"
 
-  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  fail "No database. Use the --db option to tell us which database to use" unless Server.options.database
   puts "Where would you mount the Web console? This is a URL that must end with /admin,"
   puts "for example, http://example.com/oauth/admin"
   print ": "
@@ -128,7 +128,7 @@ when "practice"
   end
   require "rack/oauth2/server/practice"
 
-  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  fail "No database. Use the --db option to tell us which database to use" unless Server.options.database
   port ||= 8080
   admin_url = "http://localhost:#{port}/oauth/admin"
   unless client = Server::Client.lookup(admin_url)
@@ -164,7 +164,7 @@ when "practice"
 
 when "migrate"
 
-  fail "No database. Use the --db option to tell us which database to use" unless Server.database
+  fail "No database. Use the --db option to tell us which database to use" unless Server.options.database
   puts "Set all clients to this scope (can change later by calling Client.register):"
   print ": "
   scope = $stdin.gets.strip.split
