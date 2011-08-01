@@ -18,12 +18,12 @@ class AdminApiTest < Test::Unit::TestCase
 
 
   def without_scope
-    token = Server.token_for("Superman", client.id, "nobody")
+    token = Server.token_for("Superman", client.id, "nobody", 0)
     header "Authorization", "OAuth #{token}"
   end
 
   def with_scope
-    token = Server.token_for("Superman", client.id, "oauth-admin")
+    token = Server.token_for("Superman", client.id, "oauth-admin", 0)
     header "Authorization", "OAuth #{token}"
   end
 
@@ -93,7 +93,6 @@ class AdminApiTest < Test::Unit::TestCase
       setup do
         with_scope
         get "/oauth/admin/api/clients"
-        puts last_response.body
         @first = json["list"].first
       end
 
