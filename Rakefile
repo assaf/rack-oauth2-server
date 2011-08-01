@@ -60,22 +60,32 @@ namespace :test do
   task :all=>["test:sinatra", "test:rails2", "test:rails3"]
   desc "Run all tests against Sinatra"
   task :sinatra do
-    sh "rake test FRAMEWORK=sinatra"
-  end
-  desc "Run all tests against Rails"
-  task :rails do
-    sh "rake test FRAMEWORK=rails"
+    sh "env BUNDLE_GEMFILE=Gemfile bundle exec rake"
   end
   desc "Run all tests against Rails 2.3.x"
   task :rails2 do
-    sh "env BUNDLE_GEMFILE=Rails2 rake test FRAMEWORK=rails"
+    sh "env BUNDLE_GEMFILE=Rails2 bundle exec rake"
   end
   desc "Run all tests against Rails 3.x"
   task :rails3 do
-    sh "env BUNDLE_GEMFILE=Rails3 bundle exec rake test FRAMEWORK=rails"
+    sh "env BUNDLE_GEMFILE=Rails3 bundle exec rake"
   end
 end
-task :default=>"test:all"
+
+task :default do
+  ENV["FRAMEWORK"] = "rails"
+  begin
+    require "rails" # check for Rails3
+  rescue LoadError
+    begin
+      require "initializer" # check for Rails2
+    rescue LoadError
+      ENV["FRAMEWORK"] = "sinatra"
+    end
+  end
+  task("test").invoke
+end
+
 
 begin 
   require "yard"

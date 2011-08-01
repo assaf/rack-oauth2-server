@@ -1,0 +1,12 @@
+rvm:
+- 1.8.7
+- 1.9.2
+gemfile:
+- Gemfile
+- Rails2
+- Rails3
+env:
+- DB=rack-oauth2-server
+notifications:
+  recipients:
+  - assaf@labnotes.org
