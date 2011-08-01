@@ -92,7 +92,8 @@ class AdminApiTest < Test::Unit::TestCase
     context "client list" do
       setup do
         with_scope
-        get "/oauth/admin/api/clients"
+        get "oauth/admin/api/clients"
+        puts last_response.headers
         @first = json["list"].first
       end
 
