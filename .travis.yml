@@ -6,7 +6,3 @@ gemfile:
 - Rails2
 - Rails3
 env:
-- DB=rack-oauth2-server
-notifications:
-  recipients:
-  - assaf@labnotes.org
