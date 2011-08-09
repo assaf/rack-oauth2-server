@@ -36,7 +36,7 @@ when required, but you do need to configure it from within
       config.oauth.database = Mongo::Connection.new["my_db"]
       config.oauth.authenticator = lambda do |username, password|
         user = User.find(username)
-        user if user && user.authenticated?(password)
+        user.id if user && user.authenticated?(password)
       end
     end
   end
@@ -97,7 +97,7 @@ nil or false. For example:
 
   oauth.authenticator = lambda do |username, password|
     user = User.find_by_username(username)
-    user if user && user.authenticated?(password)
+    user.id if user && user.authenticated?(password)
   end
 
 
@@ -303,7 +303,7 @@ Programatically, registering a new client is as simple as:
 
   $ ./script/console
   Loading development environment (Rails 2.3.8)
-  > Rack::OAuth2::Server.register(:display_name=>"UberClient",
+  > client = Rack::OAuth2::Server.register(:display_name=>"UberClient",
      :link=>"http://example.com/",
      :image_url=>"http://farm5.static.flickr.com/4122/4890273282_58f7c345f4.jpg",
      :scope=>%{read write},
