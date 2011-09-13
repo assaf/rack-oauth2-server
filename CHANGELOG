@@ -1,5 +1,12 @@
 2011-08-01 Version 2.4.1
 
+Fixed Server::Admin.mount ignoring path (ABrukish).
+
+Fixed a few issues with documentation (Jesse Miller).
+
+
+2011-08-01 Version 2.4.1
+
 Fixes error in oauth2-server command line (Michael Saffitz)
 
 

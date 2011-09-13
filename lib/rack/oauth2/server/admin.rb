@@ -51,7 +51,7 @@ module Rack
           #   config.middleware.use Rack::OAuth2::Server::Admin.mount
           def mount(path = "/oauth/admin")
             mount = Class.new(Mount)
-            mount.mount Admin, "/oauth/admin"
+            mount.mount Admin, path
             mount
           end
 
