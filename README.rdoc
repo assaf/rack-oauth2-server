@@ -251,7 +251,7 @@ In Rails, it would look something like this:
     def set_current_user
       @current_user = User.find(oauth.identity) if oauth.authenticated?
     end
-    
+
   end
 
 In Sinatra/Padrino, it would look something like this:
@@ -373,6 +373,11 @@ the Web admin, by granting them access to the +oauth-admin+ scope. For example:
 
 Make sure you do that, or you'll allow anyone access to the OAuth Web admin.
 
+After this, remember to include the server admin module in your initializer, because this is an optional
+feature:
+
+require "rack/oauth2/server/admin"
+
 Next, mount the OAuth Web admin as part of your application, and feed it the
 client ID/secret. For example, for Rails 2.3.x add this to
 +config/environment.rb+:
@@ -431,7 +436,7 @@ You can set the following options:
   development mode).
 - +scope+ -- Common scope shown and added by default to new clients (array of
   names, e.g. ["read", "write"]).
- 
+
 === Web Admin API
 
 The OAuth Web admin is a single-page client application that operates by
@@ -531,7 +536,7 @@ two use to control the authorization flow:
                 | authenticate client |    | oauth.authorization |
                 -----------------------    -----------------------
 
-                                    Your code 
+                                    Your code
      --------------------     ----------------------    -----------------------
      | Authenticate user |    | Ask user to grant/ |    | Set response        |
   -> |                   | -> | deny client access | -> |                     | ->
@@ -540,8 +545,8 @@ two use to control the authorization flow:
      --------------------     ----------------------    -----------------------
 
       Rack::OAuth2::Server
-     -----------------------    
-     | Create access grant |    
+     -----------------------
+     | Create access grant |
   -> | or access token for | -> Redirect back
      | oauth.identity      |    to client app
      -----------------------
@@ -605,6 +610,6 @@ access tokens can also expire, but we don't support expiration at the moment)
 Rack::OAuth2::Server was written to provide authorization/authentication for
 the new Flowtown API[http://developer.flowtown.com]. Thanks to
 Flowtown[http://flowtown.com] for making it happen and allowing it to be open
-sourced. 
+sourced.
 
 Rack::OAuth2::Server is available under the MIT license.
