@@ -77,7 +77,8 @@ module Rack
           end
 
           def collection
-            Server.database["oauth2.access_tokens"]
+            prefix = Server.options[:collection_prefix]
+            Server.database["#{prefix}.access_tokens"]
           end
         end
 

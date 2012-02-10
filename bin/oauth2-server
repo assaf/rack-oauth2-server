@@ -14,10 +14,19 @@ if (i = ARGV.index("--db")) && ARGV[i+1]
   Server.options.database = db
   ARGV[i,2] = []
 end
+
 if (i = ARGV.index("--port") || ARGV.index("-p")) && ARGV[i+1]
   port = ARGV[i + 1].to_i
   ARGV[i,2] = []
 end
+
+
+if (i = ARGV.index("--collection-prefix") || ARGV.index("-c")) && ARGV[i+1]
+  prefix = ARGV[i + 1]
+  Server.options.collection_prefix = prefix
+  ARGV[i,2] = []
+end
+
 
 
 case ARGV[0]
@@ -198,6 +207,7 @@ Commands:
 Options:
   --db database   Database name or connection URL
   --port number   Port to run admin server, detault is 8080
+  --collection-prefix Mongo collection prefix to use by oauth models
   TEXT
   exit -1
 

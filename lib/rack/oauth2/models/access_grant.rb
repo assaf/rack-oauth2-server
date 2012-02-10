@@ -25,7 +25,8 @@ module Rack
           end
 
           def collection
-            Server.database["oauth2.access_grants"]
+            prefix = Server.options[:collection_prefix]
+            Server.database["#{prefix}.access_grants"]
           end
         end
 
