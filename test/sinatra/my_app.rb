@@ -11,8 +11,7 @@ class MyApp < Sinatra::Base
   end
   oauth.host = "example.org"
   oauth.database = DATABASE
-
-
+  oauth.collection_prefix = "oauth2_prefix"
 
   # 3.  Obtaining End-User Authorization
  
