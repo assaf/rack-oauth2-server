@@ -87,7 +87,14 @@ The configuration options are:
   to use the request host name.
 - +:logger+ -- The logger to use. Under Rails, defaults to use the Rails
   logger.  Will use +Rack::Logger+ if available.
-- +:collection_prefix+ --  Prefix to use in every mongo collection created by server models. By default is oauth2.
+- +:collection_prefix+ -- Sets a prefix for every mongo collection created
+  by the Rack::Oauth2::Server models. By default is oauth2.
+
+If you only intend to use the UI authorization flow, you don't need to worry
+about the authenticator. If you want to allow client applications to create
+access tokens by passing the end-user's username/password, then you need an
+authenticator. This feature is necessary for some client applications, and
+quite handy during development/testing.
 
 The authenticator is a block that receives either two or four parameters.  The
 first two are username and password. The other two are the client identifier
