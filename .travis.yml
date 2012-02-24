@@ -6,3 +6,7 @@ gemfile:
 - Rails2
 - Rails3
 env:
+notifications:
+  email:
+    - assaf@labnotes.org
+    - bploetz@gmail.com
