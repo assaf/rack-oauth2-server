@@ -7,7 +7,7 @@ strangers into your app, and OAuth 2.0 is the new awesome.
 
 http://tools.ietf.org/html/draft-ietf-oauth-v2-10
 
-http://travis-ci.org/flowtown/rack-oauth2-server.png
+http://travis-ci.org/assaf/rack-oauth2-server.png
 
 
 == Adding OAuth 2.0 To Your Application
