@@ -15,6 +15,10 @@ class ServerTest < Test::Unit::TestCase
     should "set oauth.host" do
       assert_equal "example.org", Server.options.host
     end
+
+    should "set oauth.collection_prefix" do
+      assert_equal "oauth2_prefix", Server.options.collection_prefix
+    end
   end
 
   context "get_auth_request" do
