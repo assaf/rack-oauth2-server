@@ -8,3 +8,4 @@ test/rails/log
 test/*/log/test.log
 test.log
 lib/rack/oauth2/admin/js/application.js
+.project

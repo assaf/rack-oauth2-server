@@ -19,7 +19,7 @@ class AdminUiTest < Test::Unit::TestCase
 
       should "redirect to HTTPS" do
         assert_equal 302, last_response.status
-        assert_equal "https://example.org/oauth/admin", last_response.location
+        assert_match "https://example.org/oauth/admin", last_response.location
       end
     end
 
