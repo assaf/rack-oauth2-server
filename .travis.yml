@@ -13,7 +13,6 @@ matrix:
   exclude:
     - rvm: 1.9.3
       gemfile: gemfiles/Rails2
-env:
 notifications:
   email:
     - assaf@labnotes.org
