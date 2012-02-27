@@ -9,6 +9,10 @@ gemfile:
   - gemfiles/Sinatra1.1
   - gemfiles/Sinatra1.2
   - gemfiles/Sinatra1.3
+matrix:
+  exclude:
+    - rvm: 1.9.3
+      gemfile: gemfiles/Rails2
 env:
 notifications:
   email:
