@@ -5,6 +5,8 @@ OAuth 2.0 Authorization Server as a Rack module. Because you don't allow strange
 
 ![Build status](http://travis-ci.org/assaf/rack-oauth2-server.png)
 
+For more background, [watch this presentation](http://documentup.com/assaf/rack-oauth2-server/).
+
 
 ## Adding OAuth 2.0 To Your Application
 
