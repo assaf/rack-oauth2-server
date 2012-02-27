@@ -1,5 +1,7 @@
 source :rubygems
-gemspec
+gemspec :path=>"../"
+
+gem "rails", "~>3.0"
 
 group :development do
   gem "rake"

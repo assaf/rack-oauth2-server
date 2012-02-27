@@ -1,10 +1,14 @@
 rvm:
-- 1.8.7
-- 1.9.2
+  - 1.8.7
+  - 1.9.2
+  - 1.9.3
+  - ree
 gemfile:
-- Gemfile
-- Rails2
-- Rails3
+  - gemfiles/Rails2
+  - gemfiles/Rails3
+  - gemfiles/Sinatra1.1
+  - gemfiles/Sinatra1.2
+  - gemfiles/Sinatra1.3
 env:
 notifications:
   email:

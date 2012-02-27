@@ -2,13 +2,13 @@ require "rake/testtask"
 
 spec = Gem::Specification.load(Dir["*.gemspec"].first)
 
-GEMFILE_MAP = {"Rails2" => "Rails 2.3", "Rails3" => "Rails 3.x", "Sinatra1.1" => "Sinatra 1.1", "Sinatra1.2" => "Sinatra 1.2", "Sinatra1.3" => "Sinatra 1.3"}
+GEMFILE_MAP = {"gemfiles/Rails2" => "Rails 2.3", "gemfiles/Rails3" => "Rails 3.x", "gemfiles/Sinatra1.1" => "Sinatra 1.1", "gemfiles/Sinatra1.2" => "Sinatra 1.2", "gemfiles/Sinatra1.3" => "Sinatra 1.3"}
 
 desc "Install dependencies"
 task :setup do
   GEMFILE_MAP.each do |gemfile, name|
     puts "Installing gems for testing with #{name} ..."
-    sh "env BUNDLE_GEMFILE=#{gemfile} bundle install"
+    sh "env BUNDLE_GEMFILE=#{File.dirname(__FILE__) + '/' + gemfile} bundle install"
   end
 end
 
