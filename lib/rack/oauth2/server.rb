@@ -143,7 +143,7 @@ module Rack
       #   Defaults to use the request host name.
       # - :logger -- The logger to use. Under Rails, defaults to use the Rails
       #   logger.  Will use Rack::Logger if available.
-      # - :collection_prefix -- Sets mongo db collection prefix
+      # - :collection_prefix -- Prefix to use for MongoDB collections created by rack-oauth2-server. Defaults to "oauth2".
       #
       # Authenticator is a block that receives either two or four parameters.
       # The first two are username and password. The other two are the client

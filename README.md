@@ -78,6 +78,7 @@ The configuration options are:
 - `:param_authentication` - If true, supports authentication using query/form parameters.
 - `:realm` - Authorization realm that will show up in 401 responses. Defaults to use the request host name.
 - `:logger` - The logger to use. Under Rails, defaults to use the Rails logger.  Will use `Rack::Logger` if available.
+- `:collection_prefix` - Prefix to use for MongoDB collections created by rack-oauth2-server. Defaults to `oauth2`.
 
 If you only intend to use the UI authorization flow, you don't need to worry about the authenticator. If you want to
 allow client applications to create access tokens by passing the end-user's username/password, then you need an
