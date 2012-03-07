@@ -1,3 +1,8 @@
+2012-03-27 Version 2.6.0
+
+Adding support for JWT tokens in the "assertion" grant type (Brian Ploetz)
+
+
 2012-03-26 Version 2.5.1
 
 Issue #13: Fix bug in oauth2-server introduced by pull request #9 (Rafael Chacon)

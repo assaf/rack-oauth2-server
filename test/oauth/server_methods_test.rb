@@ -303,4 +303,16 @@ class ServerTest < Test::Unit::TestCase
 
   end
 
+  context "issuers" do
+    setup do
+      @issuer = Server.register_issuer(:identifier => "http://www.hmacissuer.com", :hmac_secret => "foo", :notes => "Test HMAC Issuer")
+    end
+
+    should "return a known issuer" do
+      issuer = Server.get_issuer("http://www.hmacissuer.com")
+      assert issuer
+      assert issuer.hmac_secret == "foo"
+      assert issuer.notes == "Test HMAC Issuer"
+    end
+  end
 end

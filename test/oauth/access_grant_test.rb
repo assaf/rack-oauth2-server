@@ -1,4 +1,6 @@
 require "test/setup"
+require "jwt"
+require "openssl"
 
 
 # 4.  Obtaining an Access Token
@@ -90,6 +92,14 @@ class AccessGrantTest < Test::Unit::TestCase
     params[:scope] = scope if scope
     params[:username] = username if username
     params[:password] = password if password
+    post "/oauth/access_token", params
+  end
+
+  def request_with_assertion(assertion_type, assertion)
+    basic_authorize client.id, client.secret
+    params = { :grant_type=>"assertion", :scope=>"read write" }
+    params[:assertion_type] = assertion_type if assertion_type
+    params[:assertion] = assertion if assertion
     post "/oauth/access_token", params
   end
 
@@ -253,6 +263,125 @@ class AccessGrantTest < Test::Unit::TestCase
     end
 
     teardown { config.authenticator = @old }
+  end
+
+  # 4.1.3. Assertion
+
+  context "assertion" do
+    context "no assertion_type" do
+      setup { request_with_assertion nil, "myassertion" }
+      should_return_error :invalid_grant
+    end
+
+    context "no assertion" do
+      setup { request_with_assertion "urn:some:assertion:type", nil }
+      should_return_error :invalid_grant
+    end
+
+    context "unsupported assertion_type" do
+      setup { request_with_assertion "urn:some:assertion:type", "myassertion" }
+      should_return_error :invalid_grant
+    end
+
+    context "JWT" do
+      setup {
+        @hour_from_now = Time.now.utc.to_i + (60 * 60)
+      }
+      context "malformed assertion" do
+        setup { request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", "myassertion" }
+        should_return_error :invalid_grant
+      end
+
+      context "missing principal claim" do
+        setup {
+          @hmac_issuer = Server.register_issuer(:identifier => "http://www.hmacissuer.com", :hmac_secret => "foo", :notes => "Test HMAC Issuer")
+          @claims = {"iss" => @hmac_issuer.identifier, "aud" => "http://www.mycompany.com", "exp" => @hour_from_now}
+          jwt_assertion = JWT.encode(@claims, @hmac_issuer.hmac_secret, "HS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_return_error :invalid_grant
+      end
+
+      context "missing audience claim" do
+        setup {
+          @hmac_issuer = Server.register_issuer(:identifier => "http://www.hmacissuer.com", :hmac_secret => "foo", :notes => "Test HMAC Issuer")
+          @claims = {"iss" => @hmac_issuer.identifier, "prn" => "1234567890", "exp" => @hour_from_now}
+          jwt_assertion = JWT.encode(@claims, @hmac_issuer.hmac_secret, "HS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_return_error :invalid_grant
+      end
+
+      context "missing expiration claim" do
+        setup {
+          @hmac_issuer = Server.register_issuer(:identifier => "http://www.hmacissuer.com", :hmac_secret => "foo", :notes => "Test HMAC Issuer")
+          @claims = {"iss" => @hmac_issuer.identifier, "aud" => "http://www.mycompany.com", "prn" => "1234567890"}
+          jwt_assertion = JWT.encode(@claims, "shhh", "HS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_return_error :invalid_grant
+      end
+
+      context "missing issuer claim" do
+        setup {
+          @claims = {"aud" => "http://www.mycompany.com", "prn" => "1234567890", "exp" => @hour_from_now}
+          jwt_assertion = JWT.encode(@claims, "shhh", "HS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_return_error :invalid_grant
+      end
+
+      context "unknown issuer" do
+        setup {
+          @claims = {"iss" => "unknown", "aud" => "http://www.mycompany.com", "prn" => "1234567890", "exp" => @hour_from_now}
+          jwt_assertion = JWT.encode(@claims, "shhh", "HS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_return_error :invalid_grant
+      end
+
+      context "valid HMAC assertion" do
+        setup {
+          @hmac_issuer = Server.register_issuer(:identifier => "http://www.hmacissuer.com", :hmac_secret => "foo", :notes => "Test HMAC Issuer")
+          @claims = {"iss" => @hmac_issuer.identifier, "aud" => "http://www.mycompany.com", "prn" => "1234567890", "exp" => @hour_from_now}
+          jwt_assertion = JWT.encode(@claims, @hmac_issuer.hmac_secret, "HS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_respond_with_access_token "read write"
+      end
+
+      context "valid RSA assertion" do
+        setup {
+          @private_key = OpenSSL::PKey::RSA.generate(512)
+          @rsa_issuer = Server.register_issuer(:identifier => "http://www.rsaissuer.com", :public_key => @private_key.public_key.to_pem, :notes => "Test RSA Issuer")
+          @claims = {"iss" => @rsa_issuer.identifier, "aud" => "http://www.mycompany.com", "prn" => "1234567890", "exp" => @hour_from_now}
+          jwt_assertion = JWT.encode(@claims, @private_key, "RS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_respond_with_access_token "read write"
+      end
+
+      context "expired claim set" do
+        setup {
+          @hmac_issuer = Server.register_issuer(:identifier => "http://www.hmacissuer.com", :hmac_secret => "foo", :notes => "Test HMAC Issuer")
+          @claims = {"iss" => @hmac_issuer.identifier, "aud" => "http://www.mycompany.com", "prn" => "1234567890", "exp" => Time.now.utc.to_i - (11 * 60)}
+          jwt_assertion = JWT.encode(@claims, @hmac_issuer.hmac_secret, "HS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_return_error :invalid_grant
+      end
+
+      context "expiration claim within the fudge factor time" do
+        setup {
+          @hmac_issuer = Server.register_issuer(:identifier => "http://www.hmacissuer.com", :hmac_secret => "foo", :notes => "Test HMAC Issuer")
+          @claims = {"iss" => @hmac_issuer.identifier, "aud" => "http://www.mycompany.com", "prn" => "1234567890", "exp" => Time.now.utc.to_i - (9 * 60)}
+          jwt_assertion = JWT.encode(@claims, @hmac_issuer.hmac_secret, "HS256")
+          request_with_assertion "urn:ietf:params:oauth:grant-type:jwt-bearer", jwt_assertion
+        }
+        should_respond_with_access_token "read write"
+      end
+
+    end
   end
 
 

@@ -28,7 +28,7 @@ different database engine, send us a pull request.
 For Rails 2.3/3.0, `Rack::OAuth2::Server` automatically adds itself as middleware when required, but you do need to
 configure it from within `config/environment.rb` (or one of the specific environment files). For example:
 
-```
+```ruby
 Rails::Initializer.run do |config|
   . . .
   config.after_initialize do
@@ -44,7 +44,7 @@ end
 For Sinatra and Padrino, first require `rack/oauth2/sinatra` and register `Rack::OAuth2::Sinatra` into your application.
 For example:
 
-```
+```ruby
 require "rack/oauth2/sinatra"
 
 class MyApp < Sinatra::Base
@@ -88,7 +88,7 @@ The authenticator is a block that receives either two or four parameters.  The f
 other two are the client identifier and scope. It authenticated, it returns an identity, otherwise it can return nil or
 false. For example:
 
-```
+```ruby
 oauth.authenticator = lambda do |username, password|
   user = User.find_by_username(username)
   user.id if user && user.authenticated?(password)
@@ -117,7 +117,7 @@ the user back to the client application with a suitable error code.
 
 In Rails, the entire flow would look something like this:
 
-```
+```ruby
 class OauthController < ApplicationController
   def authorize
     if current_user
@@ -143,7 +143,7 @@ cannot render anything, but can set the right response headers and return a stat
 
 In Sinatra/Padrino, it would look something like this:
 
-```
+```ruby
 get "/oauth/authorize" do
   if current_user
     render "oauth/authorize"
@@ -207,7 +207,7 @@ header `oauth.no_scope` to the scope name, or using `oauth_required` with the sc
 
 In Rails, it would look something like this:
 
-```
+```ruby
 class MyController < ApplicationController
 
   before_filter :set_current_user
@@ -244,7 +244,7 @@ end
 
 In Sinatra/Padrino, it would look something like this:
 
-```
+```ruby
 before do
   @current_user = User.find(oauth.identity) if oauth.authenticated?
 end
@@ -309,7 +309,7 @@ Loading development environment (Rails 2.3.8)
 You may want your application to register its own client application, always with the same client ID and secret, which
 are also stored in a configuration file. For example, your `db/seed.rb` may contain:
 
-```
+```ruby
 oauth2 = YAML.load_file(Rails.root + "config/oauth2.yml")
 Rack::OAuth2::Server.register(id: oauth2["client_id"], secret: oauth2["client_secret"],
   display_name: "UberClient", link: "http://example.com",
@@ -332,6 +332,41 @@ authorization process. This is typically used in server to server scenarios wher
 two-legged flow, send the grant_type of "none" along with the client_id and client_secret to the access token path, and
 a new access token will be generated (assuming the client_id and client_secret check out).
 
+## Assertions
+
+Rack::OAuth2::Server supports the use of assertions (in the form of the `assertion` grant_type)
+to obtain access tokens. Currently JSON Web Tokens (JWT) are the only supported assertion_type.
+
+http://tools.ietf.org/html/draft-ietf-oauth-v2-10#section-4.1.3
+
+http://tools.ietf.org/html/draft-jones-oauth-jwt-bearer-03
+
+In order to verify the signatures of assertions, you will need to create assertion Issuers.
+You can register assertion Issuers using the command line tool `oauth2-server`:
+
+```
+$ oauth2-server register_issuer --db my_db
+```
+
+Programatically, registering a new Issuer is as simple as:
+
+```
+$ ./script/console
+  Loading development environment (Rails 2.3.8)
+> issuer = Rack::OAuth2::Server.register_issuer(:identifier => "http://www.someidp.com",
+   :hmac_secret => "foo",
+   :public_key => "-----BEGIN RSA PUBLIC KEY-----\n....\n...=\n-----END RSA PUBLIC KEY-----\n")
+```
+
+When you call `register_issuer` it either registers a new issuer with these specific values, or if an issuer already exists with the given 
+identifier it will update it's properties.
+
+Depending on the algorithm used for signing the assertion (HMAC SHA or RSA), you pass either `:hmac_secret` or `:public_key` to `Rack::OAuth2::Server.register_issuer` 
+(or both if you will use both with a single issuer). The value of `:public_key` can be either a PEM or DER encoded public key (as supported by `OpenSSL::PKey::RSA.new`).
+
+Rack::OAuth2::Server validates that the issuer (`iss`), principal (`prn`), audience (`aud`) and expiration (`exp`) claims are present. It also validates that the expiration 
+claim has not passed (with a 10 minute padding added to account for server clock skew).
+
 
 ## OAuth Web Admin
 
@@ -352,7 +387,7 @@ $ oauth2-server setup --db my_db
 Next, in your application, make sure to ONLY AUTHORIZE ADMINISTRATORS to access the Web admin, by granting them access
 to the `oauth-admin` scope. For example:
 
-```
+```ruby
 def grant
   # Only admins allowed to authorize the scope oauth-admin
   if oauth.scope.include?("oauth-admin") && !current_user.admin?
@@ -368,14 +403,14 @@ Make sure you do that, or you'll allow anyone access to the OAuth Web admin.
 After this, remember to include the server admin module in your initializer (environemnt.rb or application.rb), because
 this is an optional feature:
 
-```
+```ruby
 require "rack/oauth2/server/admin"
 ```
 
 Next, mount the OAuth Web admin as part of your application, and feed it the client ID/secret. For example, for Rails
 2.3.x add this to `config/environment.rb`:
 
-```
+```ruby
 Rails::Initializer.run do |config|
   . . .
   config.after_initialize do
@@ -389,7 +424,7 @@ end
 
 For Rails 3.0.x, add this to you `config/application.rb`:
 
-```
+```ruby
   module MyApp
     class Application < Rails::Application
       config.after_initialize do
@@ -403,11 +438,13 @@ For Rails 3.0.x, add this to you `config/application.rb`:
 
 And add the follownig to `config/routes.rb`:
 
+```ruby
 mount Rack::OAuth2::Server::Admin=>"/oauth/admin"
+```
 
 For Sinatra, Padrino and other Rack-based applications, you'll want to mount like so (e.g. in `config.ru`):
 
-```
+```ruby
 Rack::Builder.new do
   map("/oauth/admin") { run Rack::OAuth2::Server::Admin }
   map("/") { run MyApp }
@@ -499,6 +536,18 @@ end up sending the access token to any server you `curl`. Useful for development
 production access tokens.
 
 
+Example using the `assertion` grant_type:
+
+```
+$ curl -i  http://localhost:3000/oauth/access_token \
+    -F client_id=4dca20453e4859cb000007 \
+    -F client_secret=981fa734e110496fcf667cbf52fbaf03 \
+    -F grant_type=assertion \
+    -F assertion_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer \
+    -F assertion=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vd3d3LnNvbWVjb21wYW55LmNvbSIsImF1ZCI6Imh0dHA6Ly93d3cubXljb21wYW55LmNvbSIsInBybiI6IjEyMzQ1Njc4OTAifQ.bDrcogybtJ9n5d2a971Q72ye7GN64u7WXmr2OLxSeyc
+```
+
+
 ## Methods You'll Want To Use From Your App
 
 You can use the Server module to create, fetch and otherwise work with access tokens and grants. Available methods
@@ -516,7 +565,9 @@ include:
   client's ID and secret). Idempotent, so perfect for running during setup and migration.
 - `get_auth_request` -- Resolves authorization request handle into an `AuthRequest` object. Could be useful during the
   authorization flow.
-
+- `register_issuer` -- Registers a new assertion issuer. Can also be used to change
+  existing issuers. Idempotent, so perfect for running during setup and migration.
+- `get_issuer` -- Resolves an issuer identifier into an Issuer object.
 
 ## Mandatory ASCII Diagram
 
@@ -591,6 +642,11 @@ client).
 
 An `Rack::OAuth2::Server::AccessToken` is created by copying values from an `AuthRequest` or `AccessGrant`, and remains
 in effect until revoked. (OAuth 2.0 access tokens can also expire, but we don't support expiration at the moment)
+
+### Issuer
+
+An issuer is a identity provider which issues assertions that may be used to
+obtain an access token.
 
 
 ## Credits

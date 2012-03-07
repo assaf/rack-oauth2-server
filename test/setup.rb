@@ -117,5 +117,6 @@ class Test::Unit::TestCase
     Server::AuthRequest.collection.drop
     Server::AccessGrant.collection.drop
     Server::AccessToken.collection.drop
+    Server::Issuer.collection.drop
   end
 end

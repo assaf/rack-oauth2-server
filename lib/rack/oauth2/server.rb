@@ -3,6 +3,7 @@ require "rack/oauth2/models"
 require "rack/oauth2/server/errors"
 require "rack/oauth2/server/utils"
 require "rack/oauth2/server/helper"
+require "iconv"
 
 
 module Rack
@@ -119,7 +120,41 @@ module Rack
           AccessToken.from_identity(identity)
         end
 
+        # Registers and returns a new Issuer. Can also be used to update
+        # existing Issuer, by passing the identifier of an existing Issuer record.
+        # That way, your setup script can create a new client application and run
+        # repeatedly without fail.
+        #
+        # @param [Hash] args Arguments for registering Issuer
+        # @option args [String] :identifier Issuer identifier. Use this to update
+        # an existing Issuer
+        # @option args [String] :hmac_secret The HMAC secret for this Issuer
+        # @option args [String] :public_key The RSA public key (in PEM format) for this Issuer
+        # @option args [Array] :notes Free form text, for internal use.
+        #
+        # @example Registering new Issuer
+        #   Server.register_issuer :hmac_secret=>"foo", :notes=>"Company A"
+        # @example Migration using configuration file
+        #   config = YAML.load_file(Rails.root + "config/oauth.yml")
+        #   Server.register_issuer config["id"],
+        #   :hmac_secret=>"bar", :notes=>"Company A"
+        def register_issuer(args)
+          if args[:identifier] && (issuer = get_issuer(args[:identifier]))
+            issuer.update(args)
+          else
+            Issuer.create(args)
+          end
+        end
+
+        # Returns an Issuer from it's identifier.
+        #
+        # @param [String] identifier the Issuer's identifier
+        # @return [Issuer]
+        def get_issuer(identifier)
+          Issuer.from_identifier(identifier)
+        end
       end
+
 
       # Options are:
       # - :access_token_path -- Path for requesting access token. By convention
@@ -381,6 +416,17 @@ module Rack
             identity = options.authenticator.call(*args)
             raise InvalidGrantError, "Username/password do not match" unless identity
             access_token = AccessToken.get_token_for(identity, client, requested_scope, options.expires_in)
+          when "assertion"
+            # 4.1.3. Assertion
+            requested_scope = request.POST["scope"] ? Utils.normalize_scope(request.POST["scope"]) : client.scope
+            assertion_type, assertion = request.POST.values_at("assertion_type", "assertion")
+            raise InvalidGrantError, "Missing assertion_type/assertion" unless assertion_type && assertion
+            # TODO: Add other supported assertion types (i.e. SAML) here
+            raise InvalidGrantError, "Unsupported assertion_type" if assertion_type != "urn:ietf:params:oauth:grant-type:jwt-bearer"
+            if assertion_type == "urn:ietf:params:oauth:grant-type:jwt-bearer"
+              identity = process_jwt_assertion(assertion)
+              access_token = AccessToken.get_token_for(identity, client, requested_scope, options.expires_in)
+            end
           else
             raise UnsupportedGrantType
           end
@@ -435,6 +481,48 @@ module Rack
         challenge << ', error="%s", error_description="%s"' % [error.code, error.message] if error
         return [401, { "WWW-Authenticate"=>challenge }, [error && error.message || ""]]
       end
+
+      # Processes a JWT assertion
+      def process_jwt_assertion(assertion)
+        begin
+          require 'jwt'
+          require 'json'
+          require 'openssl'
+          require 'time'
+          # JWT.decode only returns the claims. Gotta get the header ourselves
+          header = JSON.parse(JWT.base64url_decode(assertion.split('.')[0]))
+          algorithm = header['alg']
+          payload = JWT.decode(assertion, nil, false)
+
+          raise InvalidGrantError, "missing issuer claim" if !payload.has_key?('iss')
+
+          issuer_identifier = payload['iss']
+          issuer = Issuer.from_identifier(issuer_identifier)
+          raise InvalidGrantError, 'Invalid issuer' if issuer.nil?
+          if algorithm =~ /^HS/
+            validated_payload = JWT.decode(assertion, issuer.hmac_secret, true)
+          elsif algorithm =~ /^RS/
+            validated_payload = JWT.decode(assertion, OpenSSL::PKey::RSA.new(issuer.public_key), true)
+          end
+
+          raise InvalidGrantError, "missing principal claim" if !validated_payload.has_key?('prn')
+          raise InvalidGrantError, "missing audience claim" if !validated_payload.has_key?('aud')
+          raise InvalidGrantError, "missing expiration claim" if !validated_payload.has_key?('exp')
+
+          expires = validated_payload['exp'].to_i
+          # add a 10 minute fudge factor for clock skew between servers
+          skewed_expires_time = expires + (10 * 60)
+          now = Time.now.utc.to_i
+          raise InvalidGrantError, "expired claims" if skewed_expires_time <= now
+          principal = validated_payload['prn']
+          principal
+        rescue JWT::DecodeError => de
+          raise InvalidGrantError, de.message
+        rescue JSON::ParserError => pe
+          raise InvalidGrantError, "Invalid segment encoding"
+        end
+      end
+
 
       # Wraps Rack::Request to expose Basic and OAuth authentication
       # credentials.

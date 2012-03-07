@@ -63,6 +63,24 @@ when "register"
   puts "ID\t#{client.id}"
   puts "Secret\t#{client.secret}"
 
+when "register_issuer"
+  fail "No database. Use the --db option to tell us which database to use" unless Server.options.database
+  begin
+    print "Identifier (typically a URL):\t"
+    identifier = $stdin.gets
+    print "HMAC secret:\t"
+    hmac_secret = $stdin.gets
+    print "RSA public key:\t\t"
+    public_key = $stdin.gets
+    issuer = Server.register_issuer(:identifier => identifier, :hmac_secret => hmac_secret, :public_key => public_key)
+  rescue
+    puts "\nFailed to register issuer: #{$!}"
+    exit -1
+  end
+  puts "Registered Issuer #{issuer.identifier}"
+  puts "HMAC secret\t#{issuer.hmac_secret}"
+  puts "RSA public key\t#{issuer.public_key}"
+
 when "setup"
 
   fail "No database. Use the --db option to tell us which database to use" unless Server.options.database
@@ -204,6 +222,7 @@ Commands:
   migrate         Run this when migrating from 1.x to 2.x
   practice        Runs a dummy OAuth 2.0 server, use this to test your OAuth 2.0 client
   register        Register a new client application
+  register_issuer Register a new assertion issuer
   setup           Create new admin account and help you setup the OAuth Web console
 
 Options:
