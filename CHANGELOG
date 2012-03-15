@@ -1,9 +1,10 @@
-2011-09-13 Version 2.4.2
+2012-03-15 Version 2.4.2
 
 Fixed Server::Admin.mount ignoring path (ABrukish).
 
 Fixed a few issues with documentation (Jesse Miller).
 
+Fixed issue with Rack::Lint in development mode using rackup (Jared Allen)
 
 2011-08-01 Version 2.4.1
 

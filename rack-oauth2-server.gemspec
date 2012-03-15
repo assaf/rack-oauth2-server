@@ -10,11 +10,11 @@ Gem::Specification.new do |spec|
   spec.description    = "Because you don't allow strangers into your app, and OAuth 2.0 is the new awesome."
   spec.post_install_message = "To get started, run the command oauth2-server"
 
-  spec.files          = Dir["{bin,lib,rails,test}/**/*", "CHANGELOG", "VERSION", "MIT-LICENSE", "README.rdoc", "Rakefile", "Gemfile", "*.gemspec"]
+  spec.files          = Dir["{bin,lib,rails,test}/**/*", "CHANGELOG", "VERSION", "MIT-LICENSE", "README.md", "Rakefile", "Gemfile", "*.gemspec"]
   spec.executable     = "oauth2-server"
 
-  spec.extra_rdoc_files = "README.rdoc", "CHANGELOG"
-  spec.rdoc_options     = "--title", "rack-oauth2-server #{spec.version}", "--main", "README.rdoc",
+  spec.extra_rdoc_files = "README.md", "CHANGELOG"
+  spec.rdoc_options     = "--title", "rack-oauth2-server #{spec.version}", "--main", "README.md",
                           "--webcvs", "http://github.com/assaf/#{spec.name}"
   spec.license          = "MIT"
 
