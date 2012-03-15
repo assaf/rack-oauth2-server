@@ -226,7 +226,7 @@ module Rack
           # and return appropriate WWW-Authenticate header.
           response = @app.call(env)
           if response[0] == 403
-            scope = Utils.normalize_scope(response[1]["oauth.no_scope"])
+            scope = Utils.normalize_scope(response[1].delete("oauth.no_scope"))
             challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scope.join(" ")]
             response[1]["WWW-Authenticate"] = challenge
             return response
