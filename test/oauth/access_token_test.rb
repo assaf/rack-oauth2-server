@@ -245,6 +245,9 @@ class AccessTokenTest < Test::Unit::TestCase
       should "respond with scope name" do
         assert_match " scope=\"math\"", last_response["WWW-Authenticate"]
       end
+      should "respond with proper headers" do
+        Rack::Lint.new(nil).check_headers(last_response.headers)
+      end
     end
   end
 
