@@ -261,6 +261,17 @@ class AccessGrantTest < Test::Unit::TestCase
   context "using none" do
     setup { request_none }
     should_respond_with_access_token "read write"
+    should "generate a new access token on each request per client_id/client_secret pair" do
+      request_none
+      token1 = JSON.parse(last_response.body)["access_token"]
+      request_none
+      token2 = JSON.parse(last_response.body)["access_token"]
+      request_none
+      token3 = JSON.parse(last_response.body)["access_token"]
+      assert_not_equal token1, token2
+      assert_not_equal token2, token3
+      assert_not_equal token1, token3
+    end
   end
 
   context "using authorization code" do

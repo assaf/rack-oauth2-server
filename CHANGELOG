@@ -1,3 +1,9 @@
+2012-03-23 Version 2.5.0
+
+Issue #12: Changed two-legged OAuth flow back to always returning a new access token
+for a given client_id/client_secret pair (Brian Ploetz)
+
+
 2012-03-15 Version 2.4.2
 
 Fixed Server::Admin.mount ignoring path (ABrukish).
@@ -5,6 +11,7 @@ Fixed Server::Admin.mount ignoring path (ABrukish).
 Fixed a few issues with documentation (Jesse Miller).
 
 Fixed issue with Rack::Lint in development mode using rackup (Jared Allen)
+
 
 2011-08-01 Version 2.4.1
 

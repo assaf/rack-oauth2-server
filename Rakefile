@@ -60,9 +60,9 @@ desc "Push new release to gemcutter and git tag"
 task :push=>["test:all", "build"] do
   puts "Tagging version #{spec.version} .."
   sh "git push"
-  sh "git tag -a v#{spec.version}"
+  sh "git tag -a v#{spec.version} -m \"Tagging v#{spec.version}\""
   sh "git push --tags"
-  puts "Building and pushing gem .."
+  puts "Publishing gem.."
   sh "gem push #{spec.name}-#{spec.version}.gem"
 end
 
