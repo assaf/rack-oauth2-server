@@ -1,0 +1,17 @@
+source :rubygems
+gemspec :path=>"../"
+
+gem "rails", "~>2.3"
+
+group :development do
+  gem "rake"
+  gem "thin"
+  gem "yard"
+end
+
+group :test do
+  gem "awesome_print"
+  gem "rack-test"
+  gem "shoulda"
+  gem "timecop"
+end

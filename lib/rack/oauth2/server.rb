@@ -29,6 +29,7 @@ module Rack
         # @param [String] client_id Client identifier (e.g. from oauth.client.id)
         # @return [Client]
         def get_client(client_id)
+          return client_id if Client === client_id
           Client.find(client_id)
         end
 
@@ -142,7 +143,7 @@ module Rack
       #   Defaults to use the request host name.
       # - :logger -- The logger to use. Under Rails, defaults to use the Rails
       #   logger.  Will use Rack::Logger if available.
-      # - :collection_prefix -- Sets mongo db collection prefix
+      # - :collection_prefix -- Prefix to use for MongoDB collections created by rack-oauth2-server. Defaults to "oauth2".
       #
       # Authenticator is a block that receives either two or four parameters.
       # The first two are username and password. The other two are the client
@@ -225,7 +226,7 @@ module Rack
           # and return appropriate WWW-Authenticate header.
           response = @app.call(env)
           if response[0] == 403
-            scope = Utils.normalize_scope(response[1]["oauth.no_scope"])
+            scope = Utils.normalize_scope(response[1].delete("oauth.no_scope"))
             challenge = 'OAuth realm="%s", error="insufficient_scope", scope="%s"' % [(options.realm || request.host), scope.join(" ")]
             response[1]["WWW-Authenticate"] = challenge
             return response
@@ -357,7 +358,7 @@ module Rack
           when "none"
             # 4.1 "none" access grant type (i.e. two-legged OAuth flow)
             requested_scope = request.POST["scope"] ? Utils.normalize_scope(request.POST["scope"]) : client.scope
-            access_token = AccessToken.get_token_for(client.id.to_s, client, requested_scope, options.expires_in)
+            access_token = AccessToken.create_token_for(client, requested_scope, nil, options.expires_in)
           when "authorization_code"
             # 4.1.1.  Authorization Code
             grant = AccessGrant.from_code(request.POST["code"])

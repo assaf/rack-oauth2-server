@@ -205,9 +205,9 @@ Commands:
   setup           Create new admin account and help you setup the OAuth Web console
 
 Options:
-  --db database   Database name or connection URL
-  --port number   Port to run admin server, detault is 8080
-  --collection-prefix Mongo collection prefix to use by oauth models
+  --db database        Database name or connection URL
+  --port number        Port to run admin server, detault is 8080
+  --collection-prefix  Prefix to use for MongoDB collections created by rack-oauth2-server, defaults to "oauth2".
   TEXT
   exit -1
 
