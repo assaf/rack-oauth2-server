@@ -1,3 +1,8 @@
+2012-03-26 Version 2.5.1
+
+Issue #13: Fix bug in oauth2-server introduced by pull request #9 (Rafael Chacon)
+
+
 2012-03-23 Version 2.5.0
 
 Issue #12: Changed two-legged OAuth flow back to always returning a new access token
