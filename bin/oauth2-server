@@ -25,6 +25,8 @@ if (i = ARGV.index("--collection-prefix") || ARGV.index("-c")) && ARGV[i+1]
   prefix = ARGV[i + 1]
   Server.options.collection_prefix = prefix
   ARGV[i,2] = []
+else
+  Server.options.collection_prefix = 'oauth2'
 end
 
 
@@ -41,7 +43,6 @@ when "list"
   end
 
 when "register"
-
   fail "No database. Use the --db option to tell us which database to use" unless Server.options.database
   begin
     print "Application name:\t"
