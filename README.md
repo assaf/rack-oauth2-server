@@ -51,7 +51,6 @@ class MyApp < Sinatra::Base
   register Rack::OAuth2::Sinatra
 
   oauth.database = Mongo::Connection.new["my_db"]
-  oauth.scope = %w{read write}
   oauth.authenticator = lambda do |username, password|
     user = User.find(username)
     user if user && user.authenticated?(password)
