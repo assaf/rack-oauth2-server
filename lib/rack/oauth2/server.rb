@@ -225,7 +225,15 @@ module Rack
         # Flow starts here.
         return request_authorization(request, logger) if request.path == options.authorize_path
         # 4.  Obtaining an Access Token
-        return respond_with_access_token(request, logger) if request.path == options.access_token_path
+        if request.path == options.access_token_path
+          if env['CONTENT_TYPE'] =~ /^application\/json/ && request.post?
+            env.update({
+              'rack.request.form_hash' => ActiveSupport::JSON.decode(env['rack.input'].read),
+              'rack.request.form_input' => env['rack.input']
+            })
+          end
+          return respond_with_access_token(request, logger) 
+        end
 
         # 5.  Accessing a Protected Resource
         if request.authorization
