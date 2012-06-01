@@ -203,7 +203,7 @@ module Rack
       # type, no error will result.
       #
       Options = Struct.new(:access_token_path, :authenticator, :assertion_handler, :authorization_types,
-        :authorize_path, :database, :host, :param_authentication, :path, :realm, 
+        :authorize_path, :database, :host, :param_authentication, :cookie_authentication, :path, :realm, 
         :expires_in,:logger, :collection_prefix)
 
       # Global options. This is what we set during configuration (e.g. Rails'
@@ -223,6 +223,7 @@ module Rack
         @options.authorize_path ||= "/oauth/authorize"
         @options.authorization_types ||=  %w{code token}
         @options.param_authentication ||= false
+        @options.cookie_authentication ||= false
         @options.collection_prefix ||= "oauth2"
       end
 
@@ -254,11 +255,18 @@ module Rack
         if request.authorization
           # 5.1.1.  The Authorization Request Header Field
           token = request.credentials if request.oauth?
-        elsif options.param_authentication && !request.GET["oauth_verifier"] # Ignore OAuth 1.0 callbacks
-          # 5.1.2.  URI Query Parameter
-          # 5.1.3.  Form-Encoded Body Parameter
-          token   = request.GET["oauth_token"] || request.POST["oauth_token"]
-          token ||= request.GET['access_token'] || request.POST['access_token']
+        else
+          if options.param_authentication
+            # 5.1.2.  URI Query Parameter
+            # 5.1.3.  Form-Encoded Body Parameter
+            token   = request.GET["oauth_token"] || request.POST["oauth_token"]
+            token ||= request.GET['access_token'] || request.POST['access_token']
+          end
+          
+          if !token && options.cookie_authentication
+            # 5.1.4.  Cookie Value
+            token ||= request.cookies['oauth_token'] || request.cookies['access_token']
+          end
         end
 
         if token

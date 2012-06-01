@@ -165,6 +165,53 @@ class AccessTokenTest < Test::Unit::TestCase
         end
       end
     end
+    
+    # 5.1.4.  Cookie Parameter
+    
+    context "cookie parameter" do
+      context "default mode" do
+        setup { 
+          set_cookie "oauth_token=#{@token}"
+          get "/private" 
+        }
+        should_fail_authentication
+      end
+
+      context "enabled" do
+        setup do
+          config.cookie_authentication = true
+        end
+        
+        context "no token" do
+          setup { 
+            clear_cookies
+            get "/private" 
+          }
+          should_fail_authentication
+        end
+
+        context "valid token" do
+          setup { 
+            set_cookie "oauth_token=#{@token}"
+            get "/private" 
+          }
+          should_return_resource "Shhhh"
+        end
+
+        context "invalid token" do
+          setup { 
+            set_cookie "oauth_token=dingdong"
+            get "/private" 
+          }
+          should_fail_authentication :invalid_token
+        end
+        
+        teardown do
+          config.cookie_authentication = false
+        end
+      end
+    end
+    
   end
   
   context "POST" do
