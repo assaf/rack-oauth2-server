@@ -188,8 +188,22 @@ module Rack
       #     user = User.find_by_username(username)
       #     user if user && user.authenticated?(password)
       #   end
-      Options = Struct.new(:access_token_path, :authenticator, :authorization_types,
-        :authorize_path, :database, :host, :param_authentication, :path, :realm, 
+      #
+      # Assertion handler is a hash of blocks keyed by assertion_type.  Blocks receive
+      # three parameters: the client, the assertion, and the scope.  If authenticated, 
+      # it returns an identity.  Otherwise it can return nil or false.  For example:
+      #   oauth.assertion_handler['facebook.com'] = lambda do |client, assertion, scope|
+      #     facebook = URI.parse('https://graph.facebook.com/me?access_token=' + assertion)
+      #     response = Net::HTTP.get_response(facebook)
+      #
+      #     user_data = JSON.parse(response.body)
+      #     user   = User.from_facebook_data(user_data)
+      #   end
+      # Assertion handlers are optional; if one is not present for a given assertion
+      # type, no error will result.
+      #
+      Options = Struct.new(:access_token_path, :authenticator, :assertion_handler, :authorization_types,
+        :authorize_path, :database, :host, :param_authentication, :cookie_authentication, :path, :realm, 
         :expires_in,:logger, :collection_prefix)
 
       # Global options. This is what we set during configuration (e.g. Rails'
@@ -204,10 +218,12 @@ module Rack
         @app = app
         @options = options || Server.options
         @options.authenticator ||= authenticator
+        @options.assertion_handler ||= {}
         @options.access_token_path ||= "/oauth/access_token"
         @options.authorize_path ||= "/oauth/authorize"
         @options.authorization_types ||=  %w{code token}
         @options.param_authentication ||= false
+        @options.cookie_authentication ||= false
         @options.collection_prefix ||= "oauth2"
       end
 
@@ -225,17 +241,32 @@ module Rack
         # Flow starts here.
         return request_authorization(request, logger) if request.path == options.authorize_path
         # 4.  Obtaining an Access Token
-        return respond_with_access_token(request, logger) if request.path == options.access_token_path
+        if request.path == options.access_token_path
+          if env['CONTENT_TYPE'] =~ /^application\/json/ && request.post?
+            env.update({
+              'rack.request.form_hash' => ActiveSupport::JSON.decode(env['rack.input'].read),
+              'rack.request.form_input' => env['rack.input']
+            })
+          end
+          return respond_with_access_token(request, logger) 
+        end
 
         # 5.  Accessing a Protected Resource
         if request.authorization
           # 5.1.1.  The Authorization Request Header Field
           token = request.credentials if request.oauth?
-        elsif options.param_authentication && !request.GET["oauth_verifier"] # Ignore OAuth 1.0 callbacks
-          # 5.1.2.  URI Query Parameter
-          # 5.1.3.  Form-Encoded Body Parameter
-          token   = request.GET["oauth_token"] || request.POST["oauth_token"]
-          token ||= request.GET['access_token'] || request.POST['access_token']
+        else
+          if options.param_authentication
+            # 5.1.2.  URI Query Parameter
+            # 5.1.3.  Form-Encoded Body Parameter
+            token   = request.GET["oauth_token"] || request.POST["oauth_token"]
+            token ||= request.GET['access_token'] || request.POST['access_token']
+          end
+          
+          if !token && options.cookie_authentication
+            # 5.1.4.  Cookie Value
+            token ||= request.cookies['oauth_token'] || request.cookies['access_token']
+          end
         end
 
         if token
@@ -422,10 +453,16 @@ module Rack
             assertion_type, assertion = request.POST.values_at("assertion_type", "assertion")
             raise InvalidGrantError, "Missing assertion_type/assertion" unless assertion_type && assertion
             # TODO: Add other supported assertion types (i.e. SAML) here
-            raise InvalidGrantError, "Unsupported assertion_type" if assertion_type != "urn:ietf:params:oauth:grant-type:jwt-bearer"
             if assertion_type == "urn:ietf:params:oauth:grant-type:jwt-bearer"
               identity = process_jwt_assertion(assertion)
               access_token = AccessToken.get_token_for(identity, client, requested_scope, options.expires_in)
+            elsif options.assertion_handler[assertion_type]
+              args = [client, assertion, requested_scope]
+              identity = options.assertion_handler[assertion_type].call(*args)
+              raise InvalidGrantError, "Unknown assertion for #{assertion_type}" unless identity
+              access_token = AccessToken.get_token_for(identity, client, requested_scope, options.expires_in)
+            else
+              raise InvalidGrantError, "Unsupported assertion_type" if assertion_type != "urn:ietf:params:oauth:grant-type:jwt-bearer"
             end
           else
             raise UnsupportedGrantType

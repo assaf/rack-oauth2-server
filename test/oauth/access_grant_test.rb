@@ -94,6 +94,19 @@ class AccessGrantTest < Test::Unit::TestCase
     params[:password] = password if password
     post "/oauth/access_token", params
   end
+  
+  def request_with_username_password_json(username, password, scope = nil)
+    body_content = {
+      :client_id => client.id.to_s,
+      :client_secret => client.secret,
+      :grant_type => 'password',
+      :username => username,
+      :password => password
+    }
+    body_content[:scope] = scope if scope
+    # Pass params as a string and it becomes the body input
+    post_json "/oauth/access_token", body_content.to_json
+  end
 
   def request_with_assertion(assertion_type, assertion)
     basic_authorize client.id, client.secret
@@ -102,7 +115,13 @@ class AccessGrantTest < Test::Unit::TestCase
     params[:assertion] = assertion if assertion
     post "/oauth/access_token", params
   end
-
+  
+  # Post with the header indicating content type and accepted response types for JSON
+  def post_json(*args)
+    header 'Accept', 'application/json'
+    header 'Content-Type', 'application/json'
+    post *args
+  end
 
   # 4.  Obtaining an Access Token
   
@@ -277,6 +296,41 @@ class AccessGrantTest < Test::Unit::TestCase
       setup { request_with_assertion "urn:some:assertion:type", nil }
       should_return_error :invalid_grant
     end
+    
+    context "assertion_type with callback" do
+      setup do
+        config.assertion_handler['special_assertion_type'] = lambda do |client, assertion, scope|
+          @client = client
+          @assertion = assertion
+          @scope = scope
+          if assertion == 'myassertion'
+            "Spiderman"
+          else
+            nil
+          end
+        end
+        request_with_assertion 'special_assertion_type', 'myassertion'
+      end
+      
+      context "valid credentials" do
+        setup { request_with_assertion 'special_assertion_type', 'myassertion' }
+        
+        should_respond_with_access_token "read write"
+        should "receive client" do
+          assert_equal client, @client
+        end
+        should "receieve assertion" do
+          assert_equal 'myassertion', @assertion
+        end
+      end
+      
+      context "invalid credentials" do
+        setup { request_with_assertion 'special_assertion_type', 'dunno' }
+        should_return_error :invalid_grant
+      end
+
+      teardown { config.assertion_handler['special_assertion_type'] = nil }
+    end
 
     context "unsupported assertion_type" do
       setup { request_with_assertion "urn:some:assertion:type", "myassertion" }
@@ -409,8 +463,16 @@ class AccessGrantTest < Test::Unit::TestCase
   end
 
   context "using username/password" do
-    setup { request_with_username_password "cowbell", "more", "read" }
-    should_respond_with_access_token "read"
+    context "as basic auth" do
+      setup { request_with_username_password "cowbell", "more", "read" }
+      should_respond_with_access_token "read"
+    end
+
+    context "using username/password as JSON post" do
+      setup { request_with_username_password_json "cowbell", "more", "read" }
+      should_respond_with_access_token "read"
+    end
   end
+  
   
 end
