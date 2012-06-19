@@ -59,7 +59,11 @@ class AccessTokenTest < Test::Unit::TestCase
   def with_token(token = @token)
     header "Authorization", "OAuth #{token}"
   end
-  
+
+  def with_bearer_token(token = @token)
+    header "Authorization", "Bearer #{token}"
+  end
+
   def expire
     Rack::OAuth2::Server::AccessToken.collection.update({ :_id => @token }, { :$set=> { :expires_at => (Time.now - 1).to_i } })
   end
@@ -177,6 +181,14 @@ class AccessTokenTest < Test::Unit::TestCase
       context "valid token" do
         setup do
           with_token
+          post "/change"
+        end
+        should_return_resource "Woot!"
+      end
+
+      context "valid bearer token" do
+        setup do
+          with_bearer_token
           post "/change"
         end
         should_return_resource "Woot!"
