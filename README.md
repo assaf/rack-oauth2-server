@@ -3,6 +3,8 @@
 OAuth 2.0 Authorization Server as a Rack module. Because you don't allow strangers into your app, and [OAuth
 2.0](http://tools.ietf.org/html/draft-ietf-oauth-v2-10) is the new awesome.
 
+rack-oauth2-server currently implements version 10 of the OAuth 2.0 spec [http://tools.ietf.org/html/draft-ietf-oauth-v2-10](http://tools.ietf.org/html/draft-ietf-oauth-v2-10).
+
 [![Build Status](https://secure.travis-ci.org/assaf/rack-oauth2-server.png?branch=master)](http://travis-ci.org/assaf/rack-oauth2-server)
 
 For more background, [check out the presentation slides](http://speakerdeck.com/u/assaf/p/oauth-20).
