@@ -277,6 +277,41 @@ class AccessGrantTest < Test::Unit::TestCase
       setup { request_with_assertion "urn:some:assertion:type", nil }
       should_return_error :invalid_grant
     end
+    
+    context "assertion_type with callback" do
+      setup do
+        config.assertion_handler['special_assertion_type'] = lambda do |client, assertion, scope|
+          @client = client
+          @assertion = assertion
+          @scope = scope
+          if assertion == 'myassertion'
+            "Spiderman"
+          else
+            nil
+          end
+        end
+        request_with_assertion 'special_assertion_type', 'myassertion'
+      end
+      
+      context "valid credentials" do
+        setup { request_with_assertion 'special_assertion_type', 'myassertion' }
+        
+        should_respond_with_access_token "read write"
+        should "receive client" do
+          assert_equal client, @client
+        end
+        should "receieve assertion" do
+          assert_equal 'myassertion', @assertion
+        end
+      end
+      
+      context "invalid credentials" do
+        setup { request_with_assertion 'special_assertion_type', 'dunno' }
+        should_return_error :invalid_grant
+      end
+
+      teardown { config.assertion_handler['special_assertion_type'] = nil }
+    end
 
     context "unsupported assertion_type" do
       setup { request_with_assertion "urn:some:assertion:type", "myassertion" }
