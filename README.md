@@ -642,7 +642,7 @@ track of the account identifier (supplied by the application), client identifier
 client).
 
 An `Rack::OAuth2::Server::AccessToken` is created by copying values from an `AuthRequest` or `AccessGrant`, and remains
-in effect until revoked. (OAuth 2.0 access tokens can also expire, but we don't support expiration at the moment)
+in effect until revoked. OAuth 2.0 access tokens can also expire, `Rack::OAuth2::Server::AccessToken` has `expires_at` field.
 
 ### Issuer
 

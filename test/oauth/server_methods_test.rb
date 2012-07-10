@@ -282,8 +282,16 @@ class ServerTest < Test::Unit::TestCase
     should "return different token for different scope" do
       assert @token != Server.token_for("Batman", client.id, %w{read})
     end
-  end
 
+    should 'expire token after the specified amount of time' do
+      Server::AccessToken.collection.drop
+      token = Server.token_for("Batman", client.id, %w{read write}, 60)
+
+      Timecop.travel 120 do
+        assert token != Server.token_for("Batman", client.id, %w{read write})
+      end
+    end
+  end
 
   context "list access tokens" do
     setup do

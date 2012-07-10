@@ -21,7 +21,13 @@ module Rack
           def get_token_for(identity, client, scope, expires = nil)
             raise ArgumentError, "Identity must be String or Integer" unless String === identity || Integer === identity
             scope = Utils.normalize_scope(scope) & client.scope # Only allowed scope
-            unless token = collection.find_one({ :identity=>identity, :scope=>scope, :client_id=>client.id, :revoked=>nil })
+
+            token = collection.find_one({
+              :$or=>[{:expires_at=>nil}, {:expires_at=>{:$gt=>Time.now.to_i}}],
+              :identity=>identity, :scope=>scope,
+              :client_id=>client.id, :revoked=>nil})
+
+            unless token
               return create_token_for(client, scope, identity, expires)
             end
             Server.new_instance self, token
