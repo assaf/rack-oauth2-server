@@ -81,6 +81,8 @@ The configuration options are:
 - `:logger` - The logger to use. Under Rails, defaults to use the Rails logger.  Will use `Rack::Logger` if available.
 - `:collection_prefix` - Prefix to use for MongoDB collections created by rack-oauth2-server. Defaults to `oauth2`.
 
+#### Authenticator
+
 If you only intend to use the UI authorization flow, you don't need to worry about the authenticator. If you want to
 allow client applications to create access tokens by passing the end-user's username/password, then you need an
 authenticator. This feature is necessary for some client applications, and quite handy during development/testing.
@@ -95,6 +97,50 @@ oauth.authenticator = lambda do |username, password|
   user.id if user && user.authenticated?(password)
 end
 ```
+
+#### Assertion Handler
+
+The gem will automatically handle JWT assertions.  If you want to be able to configure your own function to handle custom assertion types, you can follow this example for "facebook.com" that will allow the following use case:
+
+1.  Mobile device authenticates with Facebook, receives access_token.
+2.  Mobile device sends access_token to the server as an assertion
+3.  If the server recognizes that Facebook access_token as belonging to an existing user, return our oauth access_token as a normal access_token request; if it doesn't return unauthorized 401.
+
+In application.rb or other initializer with scope to config.oauth:
+```
+config.oauth.assertion_handler['facebook.com'] = lambda do |client, assertion, scope|
+  Rails.logger.debug("Assertion: #{assertion}")
+  graph = Koala::Facebook::GraphAPI.new(assertion)
+  begin
+    user_data = graph.get_object('me')
+    Rails.logger.debug("FB User Data: #{user_data}")
+    user = User.find_by_facebook_auth({ :uid => user_data['id']})
+  rescue Exception => e
+    # fall through
+    Rails.logger.debug("Could not find/load Facebook user: #{assertion} / #{e}")
+  end
+  if user
+    Rails.logger.debug('Valid Facebook Assertion')
+    user.id.to_s # Requires a string or integer
+  else
+    Rails.logger.debug('Invalid Facebook Assertion')
+    nil
+  end
+end
+```
+
+If you want this to be called, then your client needs to send its assertion like this (JSON format here):
+
+```
+{
+  client_id: <apiClientId>,
+  client_secret: <apiClientSecret>,
+  grant_type: 'assertion',
+  assertion_type: 'facebook.com',
+  assertion: <fb access token>
+}
+```
+
 
 ### Step 3: Let Users Authorize
 
