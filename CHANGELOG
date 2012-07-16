@@ -1,10 +1,17 @@
+2012-07-16 Version 2.8.0
+
+Support for assertion type callbacks (Paul Covell)
+
+
 2012-07-10 Version 2.7.0
 
 Support for expiring tokens (Fabrizio Regini & Daniel Vartanov)
 
+
 2012-06-18 Version 2.6.1
 
 Added missing require "json" statement (Gaku Ueda)
+
 
 2012-03-27 Version 2.6.0
 
