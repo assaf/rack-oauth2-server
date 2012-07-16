@@ -107,7 +107,7 @@ The gem will automatically handle JWT assertions.  If you want to be able to con
 3.  If the server recognizes that Facebook access_token as belonging to an existing user, return our oauth access_token as a normal access_token request; if it doesn't return unauthorized 401.
 
 In application.rb or other initializer with scope to config.oauth:
-```
+```ruby
 config.oauth.assertion_handler['facebook.com'] = lambda do |client, assertion, scope|
   Rails.logger.debug("Assertion: #{assertion}")
   graph = Koala::Facebook::GraphAPI.new(assertion)
