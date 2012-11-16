@@ -2,10 +2,10 @@ source :rubygems
 gemspec :path=>"../"
 
 gem "rails", "~>2.3"
+gem "bson_ext", :platforms => :mri
 
 group :development do
   gem "rake"
-  gem "thin"
   gem "yard"
 end
 

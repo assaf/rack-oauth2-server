@@ -12,16 +12,22 @@ Gem::Specification.new do |spec|
 
   spec.files          = Dir["{bin,lib,rails,test}/**/*", "CHANGELOG", "VERSION", "MIT-LICENSE", "README.md", "Rakefile", "Gemfile", "*.gemspec"]
   spec.executable     = "oauth2-server"
+  spec.extensions     = ['ext/mkrf_conf.rb']
 
   spec.extra_rdoc_files = "README.md", "CHANGELOG"
   spec.rdoc_options     = "--title", "rack-oauth2-server #{spec.version}", "--main", "README.md",
                           "--webcvs", "http://github.com/assaf/#{spec.name}"
   spec.license          = "MIT"
 
+  if RUBY_PLATFORM =~ /java/
+    spec.platform = Gem::Platform::JAVA
+  else
+    spec.platform = Gem::Platform::RUBY
+  end
+
   spec.required_ruby_version = '>= 1.8.7'
   spec.add_dependency "rack", "~>1.1"
   spec.add_dependency "mongo", "~>1"
-  spec.add_dependency "bson_ext"
   spec.add_dependency "sinatra", "~>1.1"
   spec.add_dependency "json"
   spec.add_dependency "jwt", "~>0.1.4"
