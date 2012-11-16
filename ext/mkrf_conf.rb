@@ -1,4 +1,3 @@
-puts "\n\n\n\n\nin mkrf_conf.rb!"
 require 'rubygems'
 require 'rubygems/command.rb'
 require 'rubygems/dependency_installer.rb' 
