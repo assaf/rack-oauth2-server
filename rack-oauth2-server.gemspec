@@ -19,10 +19,17 @@ Gem::Specification.new do |spec|
   spec.license          = "MIT"
 
   spec.required_ruby_version = '>= 1.8.7'
-  spec.add_dependency "rack", "~>1.1"
+  spec.add_dependency "rack", "~>1.4.0"
   spec.add_dependency "mongo", "~>1"
   spec.add_dependency "bson_ext"
   spec.add_dependency "sinatra", "~>1.1"
   spec.add_dependency "json"
   spec.add_dependency "jwt", "~>0.1.4"
+  spec.add_development_dependency 'rake', '~>10.0.3'
+  spec.add_development_dependency 'rack-test', '~>0.6.2'
+  spec.add_development_dependency 'shoulda', '~>3.3.2'
+  spec.add_development_dependency 'timecop', '~>0.5.9.1'
+  spec.add_development_dependency 'ap', '~>0.1.1'
+  spec.add_development_dependency 'crack', '~>0.3.2'
+  spec.add_development_dependency 'rails', '~>3.0'
 end
