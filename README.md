@@ -696,6 +696,15 @@ An issuer is a identity provider which issues assertions that may be used to
 obtain an access token.
 
 
+## Tests
+
+Start tests for Rails
+
+``` ruby
+  bundle install
+  bundle exec rake test
+```
+
 ## Credits
 
 Rack::OAuth2::Server was written to provide authorization/authentication for the Flowtown API. Thanks to
