@@ -30,7 +30,6 @@ Rack::OAuth2::Server::Admin.configure do |config|
   config.oauth.logger = $logger
 end
 
-
 case FRAMEWORK
 when "sinatra", nil
 
