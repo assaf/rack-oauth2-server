@@ -38,7 +38,9 @@ module Rack
             expires_at = Time.now.to_i + expires if expires && expires != 0
             token = { :_id=>Server.secure_random, :scope=>scope,
                       :client_id=>client.id, :created_at=>Time.now.to_i,
-                      :expires_at=>expires_at, :revoked=>nil }
+                      :expires_at=>expires_at, :revoked=>nil,
+                      :last_access=>Time.now.to_i, :prev_access=>Time.now.to_i }
+
             token[:identity] = identity if identity
             collection.insert token
             Client.collection.update({ :_id=>client.id }, { :$inc=>{ :tokens_granted=>1 } })
