@@ -25,6 +25,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "sinatra", "~>1.3"
   spec.add_dependency "json"
   spec.add_dependency "jwt", "~>0.1.8"
+  spec.add_dependency "iconv"
   spec.add_development_dependency 'rake', '~>10.0.4'
   spec.add_development_dependency 'rack-test', '~>0.6.2'
   spec.add_development_dependency 'shoulda', '~>3.4.0'
