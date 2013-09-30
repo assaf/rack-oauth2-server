@@ -1,3 +1,12 @@
+2013-09-30 Version 2.8.1
+
+Includes a content-type for unauthorized requests (johnallen3d)
+
+Prevents stack level too deep error (johnallen3d)
+
+Allow token use in MongoDB cappedCollections (cstuss)
+
+
 2012-07-16 Version 2.8.0
 
 Support for assertion type callbacks (Paul Covell)
