@@ -9,7 +9,7 @@ module Rack
           # Find Client from client identifier.
           def find(client_id)
             id = Server.options[:pk_generator].from_string(client_id.to_s)
-            Server.new_instance self, collection.find_one(id)
+            Server.new_instance self, collection.find_one({ :_id=>id })
           rescue BSON::InvalidObjectId, InvalidUUID
           end
 

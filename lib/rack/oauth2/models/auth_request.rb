@@ -10,7 +10,7 @@ module Rack
           # Find AuthRequest from identifier.
           def find(request_id)
             id = Server.options[:pk_generator].from_string(request_id.to_s)
-            Server.new_instance self, collection.find_one(id)
+            Server.new_instance self, collection.find_one({ :_id=>id })
           rescue BSON::InvalidObjectId, InvalidUUID
           end
 
