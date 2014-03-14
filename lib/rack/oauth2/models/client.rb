@@ -8,9 +8,9 @@ module Rack
           # Authenticate a client request. This method takes three arguments,
           # Find Client from client identifier.
           def find(client_id)
-            id = BSON::ObjectId(client_id.to_s)
-            Server.new_instance self, collection.find_one(id)
-          rescue BSON::InvalidObjectId
+            id = Server.options[:pk_generator].from_string(client_id.to_s)
+            Server.new_instance self, collection.find_one({ :_id=>id })
+          rescue BSON::InvalidObjectId, InvalidUUID
           end
 
           # Create a new client. Client provides the following properties:
@@ -33,20 +33,21 @@ module Rack
                         :notes=>args[:notes].to_s, :scope=>scope,
                         :created_at=>Time.now.to_i, :revoked=>nil }
             if args[:id] && args[:secret]
-              fields[:_id], fields[:secret] = BSON::ObjectId(args[:id].to_s), args[:secret]
+              fields[:_id], fields[:secret] = Server.options[:pk_generator].from_string(args[:id].to_s), args[:secret]
               collection.insert(fields, :safe=>true)
             else
               fields[:secret] = Server.secure_random
-              fields[:_id] = collection.insert(fields)
+              fields[:_id] = Server.options[:pk_generator].generate
+              collection.insert(fields)
             end
             Server.new_instance self, fields
           end
 
           # Lookup client by ID, display name or URL.
           def lookup(field)
-            id = BSON::ObjectId(field.to_s)
+            id = Server.options[:pk_generator].from_string(field.to_s)
             Server.new_instance self, collection.find_one(id)
-          rescue BSON::InvalidObjectId
+          rescue BSON::InvalidObjectId, InvalidUUID
             Server.new_instance self, collection.find_one({ :display_name=>field }) || collection.find_one({ :link=>field })
           end
 
@@ -58,7 +59,7 @@ module Rack
 
           # Deletes client with given identifier (also, all related records).
           def delete(client_id)
-            id = BSON::ObjectId(client_id.to_s)
+            id = Server.options[:pk_generator].from_string(client_id.to_s)
             Client.collection.remove({ :_id=>id })
             AuthRequest.collection.remove({ :client_id=>id })
             AccessGrant.collection.remove({ :client_id=>id })

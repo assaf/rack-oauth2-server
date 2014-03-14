@@ -3,6 +3,7 @@ require "rack/oauth2/models"
 require "rack/oauth2/server/errors"
 require "rack/oauth2/server/utils"
 require "rack/oauth2/server/helper"
+require "rack/oauth2/pk_generators"
 require "iconv"
 require "json"
 
@@ -204,7 +205,7 @@ module Rack
       #
       Options = Struct.new(:access_token_path, :authenticator, :assertion_handler, :authorization_types,
         :authorize_path, :database, :host, :param_authentication, :path, :realm, 
-        :expires_in,:logger, :collection_prefix)
+        :expires_in,:logger, :collection_prefix, :pk_generator)
 
       # Global options. This is what we set during configuration (e.g. Rails'
       # config/application), and options all handlers inherit by default.
@@ -213,6 +214,9 @@ module Rack
       end
 
       @options = Options.new
+
+      # default to BSON::ObjectId
+      @options.pk_generator = BSONGenerator
 
       def initialize(app, options = nil, &authenticator)
         @app = app
@@ -224,6 +228,7 @@ module Rack
         @options.authorization_types ||=  %w{code token}
         @options.param_authentication ||= false
         @options.collection_prefix ||= "oauth2"
+        @options.pk_generator ||= BSONGenerator
       end
 
       # Options specific for this handle. @see Options

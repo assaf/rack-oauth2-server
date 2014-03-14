@@ -9,6 +9,17 @@ class ServerTest < Test::Unit::TestCase
       assert_equal "UberClient", @client.display_name
       assert_same_elements %w(read write oauth-admin), @client.scope
     end
-  end
 
+    context "uuid primary key" do
+      setup do
+        options = Server::Options.new
+        options.pk_generator = UUIDGenerator
+        @server = Server.new({}, options)
+      end
+
+      should "set oauth.pk_generator" do
+        assert_equal UUIDGenerator, @server.options.pk_generator
+      end
+    end
+  end
 end

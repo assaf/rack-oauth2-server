@@ -19,6 +19,10 @@ class ServerTest < Test::Unit::TestCase
     should "set oauth.collection_prefix" do
       assert_equal "oauth2_prefix", Server.options.collection_prefix
     end
+
+    should "set oauth.pk_generator" do
+      assert_equal BSONGenerator, Server.options.pk_generator
+    end
   end
 
   context "get_auth_request" do
