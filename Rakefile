@@ -2,7 +2,14 @@ require "rake/testtask"
 
 spec = Gem::Specification.load(Dir["*.gemspec"].first)
 
-GEMFILE_MAP = {"gemfiles/Rails2" => "Rails 2.3", "gemfiles/Rails3" => "Rails 3.x", "gemfiles/Sinatra1.1" => "Sinatra 1.1", "gemfiles/Sinatra1.2" => "Sinatra 1.2", "gemfiles/Sinatra1.3" => "Sinatra 1.3"}
+GEMFILE_MAP = {
+  "gemfiles/Rails3" => "Rails 3.x",
+  "gemfiles/Sinatra1.1" => "Sinatra 1.1",
+  "gemfiles/Sinatra1.2" => "Sinatra 1.2",
+  "gemfiles/Sinatra1.3" => "Sinatra 1.3"
+}
+
+GEMFILE_MAP.merge!("gemfiles/Rails2" => "Rails 2.3") unless RUBY_VERSION.to_i >= 2
 
 desc "Install dependencies"
 task :setup do
@@ -29,8 +36,9 @@ end
 namespace :test do
   GEMFILE_MAP.each do |gemfile, name|
     desc "Run all tests against #{name}"
+    framework = gemfile.split('/').last.downcase.gsub(/\d+/, '').gsub('.', '').strip
     task gemfile.downcase.gsub(/\./, "_") do
-      sh "env BUNDLE_GEMFILE=#{gemfile} bundle exec rake"
+      sh "FRAMEWORK=#{framework} BUNDLE_GEMFILE=#{gemfile} bundle exec rake"
     end
   end
   task :all=>GEMFILE_MAP.map {|gemfile, name| "test:#{gemfile.downcase.gsub(/\./, "_")}"}
@@ -67,16 +75,6 @@ task :push=>["test:all", "build"] do
 end
 
 task :default do
-  ENV["FRAMEWORK"] = "rails"
-  begin
-    require "rails" # check for Rails3
-  rescue LoadError
-    begin
-      require "initializer" # check for Rails2
-    rescue LoadError
-      ENV["FRAMEWORK"] = "sinatra"
-    end
-  end
   task("test").invoke
 end
 
